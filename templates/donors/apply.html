@@ -1,0 +1,123 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container mt-4">
+  <h2>Donor Application</h2>
+  <p class="text-muted">Fill out this form to apply as a verified donor.</p>
+
+  <form method="POST" enctype="multipart/form-data" id="applicationForm">
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label>Blood Type</label>
+      <input
+        type="text"
+        class="form-control"
+        value="{{ request.user.donor_profile.blood_type }}"
+        readonly
+      />
+      <input
+        type="hidden"
+        name="blood_type"
+        value="{{ request.user.donor_profile.blood_type }}"
+      />
+    </div>
+
+    <div class="mb-3">
+      <label>Government ID</label>
+      <input
+        type="file"
+        name="government_id"
+        id="government_id"
+        class="form-control"
+        accept=".jpg,.jpeg,.png,.pdf"
+        required
+      />
+      <div class="invalid-feedback" id="government_id_error"></div>
+      <div class="valid-feedback">Looks good!</div>
+    </div>
+
+    <div class="mb-3">
+      <label>Medical Certificate / Blood Typing Result</label>
+      <input
+        type="file"
+        name="medical_certificate"
+        id="medical_certificate"
+        class="form-control"
+        accept=".jpg,.jpeg,.png,.pdf"
+        required
+      />
+      <div class="invalid-feedback" id="medical_certificate_error"></div>
+      <div class="valid-feedback">Looks good!</div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <a href="javascript:history.back()" class="btn btn-secondary">Back</a>
+      <button type="submit" class="btn btn-danger" id="submitBtn">
+        Submit Application
+      </button>
+    </div>
+  </form>
+</div>
+
+{% block extra_js %}
+<script>
+  const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+  const allowedExtensions = [".jpg", ".jpeg", ".png", ".pdf"];
+  const maxSize = 5 * 1024 * 1024; // 5MB
+
+  function validateFile(input, errorId) {
+    const file = input.files[0];
+    const errorDiv = document.getElementById(errorId);
+
+    if (!file) return false;
+
+    const ext = "." + file.name.split(".").pop().toLowerCase();
+
+    if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(ext)) {
+      input.classList.add("is-invalid");
+      input.classList.remove("is-valid");
+      errorDiv.textContent = "Only JPG, PNG, or PDF files are allowed.";
+      return false;
+    }
+
+    if (file.size > maxSize) {
+      input.classList.add("is-invalid");
+      input.classList.remove("is-valid");
+      errorDiv.textContent = "File size must not exceed 5MB.";
+      return false;
+    }
+
+    input.classList.remove("is-invalid");
+    input.classList.add("is-valid");
+    errorDiv.textContent = "";
+    return true;
+  }
+
+  document
+    .getElementById("government_id")
+    .addEventListener("change", function () {
+      validateFile(this, "government_id_error");
+    });
+
+  document
+    .getElementById("medical_certificate")
+    .addEventListener("change", function () {
+      validateFile(this, "medical_certificate_error");
+    });
+
+  document
+    .getElementById("applicationForm")
+    .addEventListener("submit", function (e) {
+      const govValid = validateFile(
+        document.getElementById("government_id"),
+        "government_id_error",
+      );
+      const medValid = validateFile(
+        document.getElementById("medical_certificate"),
+        "medical_certificate_error",
+      );
+      if (!govValid || !medValid) {
+        e.preventDefault(); // stop form from submitting if invalid
+      }
+    });
+</script>
+{% endblock %} {% endblock %}
