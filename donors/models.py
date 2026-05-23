@@ -34,8 +34,8 @@ class DonorApplication(models.Model):
         ('rejected', 'Rejected'),
     ]
     donor = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='application')
-    government_id = models.ImageField(upload_to='applications/ids/')
-    medical_certificate = models.ImageField(upload_to='applications/certs/')
+    government_id = models.FileField(upload_to='applications/ids/')
+    medical_certificate = models.FileField(upload_to='applications/certs/')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     admin_notes = models.TextField(blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)

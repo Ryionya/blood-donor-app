@@ -23,4 +23,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('accounts.urls')),
     path('', include('pwa.urls')),
+    path('donors/', include('donors.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
