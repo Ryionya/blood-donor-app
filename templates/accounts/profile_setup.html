@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Profile Setup — BloodLink{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="card-title text-danger mb-1">Complete Your Profile</h3>
+                <p class="text-muted mb-4">This helps donors and recipients find you.</p>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <h6 class="fw-semibold text-uppercase text-muted mb-2">Basic Info</h6>
+                    {% for field in profile_form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        <input type="text"
+                               name="{{ field.html_name }}"
+                               id="{{ field.id_for_label }}"
+                               class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               {% if field.value %}value="{{ field.value }}"{% endif %}>
+                        {% for error in field.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+
+                    {% if donor_form %}
+                    <hr>
+                    <h6 class="fw-semibold text-uppercase text-muted mb-2">Donor Info</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Blood Type</label>
+                        <select name="blood_type" class="form-select">
+                            {% for value, label in donor_form.fields.blood_type.choices %}
+                                <option value="{{ value }}" {% if donor_form.initial.blood_type == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Short Bio (optional)</label>
+                        <textarea name="bio" class="form-control" rows="3">{{ donor_form.initial.bio|default:'' }}</textarea>
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-danger w-100">Save Profile</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

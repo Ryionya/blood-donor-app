@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Home — BloodLink{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-5 fw-bold text-danger">🩸 BloodLink</h1>
+    <p class="lead text-muted">Connecting blood donors with those who need them most.</p>
+
+    {% if not user.is_authenticated %}
+    <div class="mt-4">
+        <a href="{% url 'register' %}" class="btn btn-danger btn-lg me-2">Get Started</a>
+        <a href="{% url 'login' %}" class="btn btn-outline-danger btn-lg">Log In</a>
+    </div>
+    {% else %}
+    <div class="mt-4">
+        <p>Logged in as <strong>{{ user.username }}</strong> ({{ user.role }})</p>
+        {% if user.active_role == 'recipient' %}
+            <a href="#" class="btn btn-danger">Browse Donors</a>
+        {% elif user.active_role == 'donor' %}
+            <a href="#" class="btn btn-danger">My Dashboard</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
