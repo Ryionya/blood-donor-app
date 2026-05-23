@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Login — BloodLink{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="card-title text-danger mb-4">Welcome Back</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        <input type="{{ field.field.widget.input_type }}"
+                               name="{{ field.html_name }}"
+                               id="{{ field.id_for_label }}"
+                               class="form-control {% if field.errors %}is-invalid{% endif %}">
+                        {% for error in field.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-danger w-100">Log In</button>
+                </form>
+                <p class="text-center mt-3 text-muted">
+                    No account yet? <a href="{% url 'register' %}">Register</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

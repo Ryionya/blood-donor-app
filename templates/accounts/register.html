@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Register — BloodLink{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="card-title text-danger mb-4">Create Account</h3>
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">I am registering as:</label>
+                        {% for radio in form.role %}
+                            <div class="form-check">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {% for field in form %}
+                        {% if field.name != 'role' %}
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            <input type="{{ field.field.widget.input_type }}"
+                                   name="{{ field.html_name }}"
+                                   id="{{ field.id_for_label }}"
+                                   class="form-control {% if field.errors %}is-invalid{% endif %}"
+                                   {% if field.value %}value="{{ field.value }}"{% endif %}>
+                            {% for error in field.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-danger w-100">Register</button>
+                </form>
+                <p class="text-center mt-3 text-muted">
+                    Already have an account? <a href="{% url 'login' %}">Log in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -16,18 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-
-#Day 2 
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('donors/', include('donors.urls')), #Day 2
-]
-
-#Day 2
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
+    path('', include('accounts.urls')),
+    path('', include('pwa.urls')),
+    path('donors/', include('donors.urls')),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
