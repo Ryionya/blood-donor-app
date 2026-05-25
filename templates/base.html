@@ -23,27 +23,31 @@
       <div class="container">
         <a class="navbar-brand fw-bold" href="/">🩸 BloodLink</a>
         <div class="ms-auto">
-          {% if user.is_authenticated %} {% if user.role == 'donor' %}
-          <a
-            href="{% url 'switch_role' %}"
-            class="btn btn-sm me-2 {% if user.active_role == 'donor' %}btn-outline-light{% else %}btn-warning{% endif %}"
-          >
-            {% if user.active_role == 'donor' %} Switch to Recipient {% else %}
-            Switch to Donor {% endif %}
-          </a>
-          {% endif %} {% if user.role == 'donor' %}
-          <a href="{% url 'apply_donor' %}" class="btn btn-light btn-sm me-2"
-            >Apply as Donor</a
-          >
-          {% endif %}
-          <span class="text-white me-3">{{ user.username }}</span>
-          <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm"
-            >Logout</a
-          >
+
+          {% if user.is_authenticated %}
+
+            {% if user.active_role == 'recipient' or user.role == 'recipient' %}
+              <a href="{% url 'browse_donors' %}" class="btn btn-outline-light btn-sm me-2">Browse Donors</a>
+            {% endif %}
+
+            {% if user.role == 'donor' %}
+              <a href="{% url 'switch_role' %}" class="btn btn-sm me-2 {% if user.active_role == 'donor' %}btn-outline-light{% else %}btn-warning{% endif %}">
+                {% if user.active_role == 'donor' %}Switch to Recipient{% else %}Switch to Donor{% endif %}
+              </a>
+            {% endif %}
+
+            {% if user.role == 'donor' %}
+              <a href="{% url 'apply_donor' %}" class="btn btn-light btn-sm me-2">Apply as Donor</a>
+            {% endif %}
+
+            <span class="text-white me-3">{{ user.username }}</span>
+            <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">Logout</a>
+
           {% else %}
-          <a href="/login/" class="btn btn-outline-light btn-sm me-2">Login</a>
-          <a href="/register/" class="btn btn-light btn-sm">Register</a>
+            <a href="/login/" class="btn btn-outline-light btn-sm me-2">Login</a>
+            <a href="/register/" class="btn btn-light btn-sm">Register</a>
           {% endif %}
+
         </div>
       </div>
     </nav>

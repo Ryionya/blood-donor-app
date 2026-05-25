@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Browse Donors — BloodLink{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-danger mb-0">🩸 Find a Donor</h3>
+        <p class="text-muted mb-0">Browse verified blood donors near you</p>
+    </div>
+    <span class="badge bg-danger fs-6">{{ donors|length }} donor{{ donors|length|pluralize }} found</span>
+</div>
+
+<!-- Filter Form -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Blood Type</label>
+                <select name="blood_type" class="form-select">
+                    <option value="">All Blood Types</option>
+                    {% for bt in blood_type_choices %}
+                        <option value="{{ bt }}" {% if selected_blood_type == bt %}selected{% endif %}>
+                            {{ bt }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label fw-semibold">Location</label>
+                <input type="text"
+                       name="location"
+                       class="form-control"
+                       placeholder="e.g. Santa Rosa, Calamba..."
+                       value="{{ selected_location }}">
+            </div>
+            <div class="col-md-3 d-grid">
+                <button type="submit" class="btn btn-danger">Search</button>
+            </div>
+        </form>
+
+        {% if selected_blood_type or selected_location %}
+        <div class="mt-2">
+            <a href="{% url 'browse_donors' %}" class="btn btn-sm btn-outline-secondary">
+                ✕ Clear Filters
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Donor Cards -->
+{% if donors %}
+<div class="row g-4">
+    {% for donor in donors %}
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 {% if not donor.is_available %}opacity-75{% endif %}">
+
+            <!-- Card Header -->
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                <span class="badge bg-danger fs-6">{{ donor.blood_type }}</span>
+                {% if donor.is_available %}
+                    <span class="badge bg-success">✅ Available</span>
+                {% else %}
+                    <span class="badge bg-secondary">⏸ Unavailable</span>
+                {% endif %}
+            </div>
+
+            <!-- Card Body -->
+            <div class="card-body">
+                <!-- Avatar -->
+                <div class="text-center mb-3">
+                    <div class="rounded-circle bg-danger text-white d-inline-flex align-items-center justify-content-center"
+                         style="width:64px; height:64px; font-size:1.5rem;">
+                        {{ donor.name|first }}
+                    </div>
+                </div>
+
+                <h5 class="card-title text-center fw-bold mb-1">
+                    {{ donor.name }}
+                    <span class="text-warning" title="Verified Donor">✔</span>
+                </h5>
+
+                <p class="text-center text-muted small mb-2">
+                    📍 {{ donor.location }}
+                </p>
+
+                <p class="card-text text-muted small text-center">
+                    {{ donor.bio }}
+                </p>
+            </div>
+
+            <!-- Card Footer -->
+            <div class="card-footer bg-white border-top text-center">
+                {% if donor.is_available %}
+                    <a href="#" class="btn btn-danger btn-sm w-100">
+                        Request Donation
+                    </a>
+                {% else %}
+                    <button class="btn btn-secondary btn-sm w-100" disabled>
+                        Currently Unavailable
+                    </button>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="text-center py-5">
+    <div class="display-1">🔍</div>
+    <h5 class="mt-3 text-muted">No donors found</h5>
+    <p class="text-muted">Try adjusting your filters or check back later.</p>
+    <a href="{% url 'browse_donors' %}" class="btn btn-outline-danger">Clear Filters</a>
+</div>
+{% endif %}
+
+{% endblock %}
