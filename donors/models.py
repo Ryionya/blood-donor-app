@@ -28,12 +28,16 @@ class DonorProfile(models.Model):
 
 
 class DonorApplication(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
+        (STATUS_PENDING, "Pending"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_REJECTED, "Rejected"),
     ]
-    donor = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='application')
+    donor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='applications')
     government_id = models.FileField(upload_to='applications/ids/')
     medical_certificate = models.FileField(upload_to='applications/certs/')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')

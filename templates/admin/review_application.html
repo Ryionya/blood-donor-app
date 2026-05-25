@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4" style="max-width:700px">
+<a href="{% url 'admin_application_queue' %}" class="btn btn-outline-secondary btn-sm">
+    ← Back to Queue
+</a>
+  <h2 class="mt-2">Review Application</h2>
+
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card mt-3">
+    <div class="card-body">
+      <p><strong>Name:</strong> {{ application.donor.get_full_name }}</p>
+      <p><strong>Email:</strong> {{ application.donor.email }}</p>
+      <p><strong>Blood Type:</strong> {{ application.donor.donor_profile.blood_type }}</p>
+      <p><strong>Last Donation:</strong>
+        {{ application.last_donation_date|default:"Not provided" }}
+      </p>
+      <p><strong>Submitted:</strong> {{ application.submitted_at|date:"M d, Y" }}</p>
+    </div>
+  </div>
+
+  {# Document viewer — see Task 4 #}
+ {% load static %}
+<div class="mt-3 mb-4">
+  <h5>Uploaded Documents</h5>
+
+  <div class="row g-3 mt-1">
+    <div class="col-md-6">
+      <p class="fw-bold mb-1">Government ID</p>
+      {% if application.government_id %}
+        {% with name=application.government_id.name %}
+          <a href="{{ application.government_id.url }}" target="_blank" style="text-decoration:none;">
+            {% if '.pdf' in name %}
+              <div class="border rounded p-3 text-center bg-light" style="height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                <span style="font-size:48px;">📄</span>
+                <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
+                <small class="text-muted">{{ name }}</small>
+              </div>
+            {% else %}
+              <img src="{{ application.government_id.url }}"
+                class="img-fluid rounded border" alt="Government ID"
+                style="max-height:300px; object-fit:contain; width:100%; cursor:pointer;">
+            {% endif %}
+          </a>
+        {% endwith %}
+      {% else %}
+        <p class="text-muted">Not uploaded</p>
+      {% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <p class="fw-bold mb-1">Medical Certificate</p>
+      {% if application.medical_certificate %}
+        {% with name=application.medical_certificate.name %}
+          <a href="{{ application.medical_certificate.url }}" target="_blank" style="text-decoration:none;">
+            {% if '.pdf' in name %}
+              <div class="border rounded p-3 text-center bg-light" style="height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                <span style="font-size:48px;">📄</span>
+                <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
+                <small class="text-muted">{{ name }}</small>
+              </div>
+            {% else %}
+              <img src="{{ application.medical_certificate.url }}"
+                class="img-fluid rounded border" alt="Medical Certificate"
+                style="max-height:300px; object-fit:contain; width:100%; cursor:pointer;">
+            {% endif %}
+          </a>
+        {% endwith %}
+      {% else %}
+        <p class="text-muted">Not uploaded</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+<form method="POST" class="mt-4">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label class="form-label"><strong>Admin Notes</strong></label>
+        <textarea name="admin_note" class="form-control" rows="3" placeholder="Add notes or rejection reason..."></textarea>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="submit" name="action" value="approve" class="btn btn-success">Approve</button>
+        <button type="submit" name="action" value="reject" class="btn btn-danger">Reject</button>
+    </div>
+</form>
+{% endblock %}
