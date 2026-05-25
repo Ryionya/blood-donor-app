@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('accounts.urls')),
     path('', include('recipients.urls')),
+    path('webpush/', include('webpush.urls')),
     path('', include('pwa.urls')),
     path('', include('donors.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
