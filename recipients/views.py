@@ -1,4 +1,10 @@
 from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from .models import BloodRequest
+from accounts.models import User
 
 def browse_donors_view(request):
     # Placeholder donor data for now
@@ -64,4 +70,92 @@ def browse_donors_view(request):
         'blood_type_choices': blood_type_choices,
         'selected_blood_type': blood_type,
         'selected_location': location,
+    })
+    
+@login_required
+def send_blood_request_view(request, donor_id):
+    donor = get_object_or_404(User, id=donor_id, role='donor')
+
+    # Prevent donors from requesting themselves
+    if request.user == donor:
+        messages.error(request, 'You cannot send a request to yourself.')
+        return redirect('browse_donors')
+
+    # Check if there is already a pending request to this donor
+    existing_request = BloodRequest.objects.filter(
+        recipient=request.user,
+        donor=donor,
+        status='pending'
+    ).first()
+
+    if existing_request:
+        messages.warning(request, 'You already have a pending request to this donor.')
+        return redirect('browse_donors')
+
+    if request.method == 'POST':
+        hospital_name = request.POST.get('hospital_name')
+        urgency = request.POST.get('urgency')
+        message = request.POST.get('message')
+
+        if not hospital_name or not urgency or not message:
+            messages.error(request, 'Please fill in all fields.')
+        else:
+            BloodRequest.objects.create(
+                recipient=request.user,
+                donor=donor,
+                hospital_name=hospital_name,
+                urgency=urgency,
+                message=message,
+                status='pending'
+            )
+            messages.success(request, f'Request sent to {donor.get_full_name() or donor.username} successfully!')
+            return redirect('my_requests')
+
+    return render(request, 'recipients/send_request.html', {
+        'donor': donor,
+        'urgency_choices': BloodRequest._meta.get_field('urgency').choices,
+    })
+    
+@login_required
+def my_requests_view(request):
+    # For recipients — requests they sent
+    sent_requests = BloodRequest.objects.filter(
+        recipient=request.user
+    ).order_by('-created_at')
+
+    return render(request, 'recipients/my_requests.html', {
+        'sent_requests': sent_requests,
+    })
+    
+@login_required
+def manage_request_view(request, request_id):
+    # For donors — accept or decline incoming requests
+    blood_request = get_object_or_404(BloodRequest, id=request_id, donor=request.user)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'accept':
+            blood_request.status = 'accepted'
+            blood_request.responded_at = timezone.now()
+            blood_request.save()
+            messages.success(request, 'You accepted the donation request.')
+
+        elif action == 'decline':
+            blood_request.status = 'declined'
+            blood_request.responded_at = timezone.now()
+            blood_request.save()
+            messages.info(request, 'You declined the donation request.')
+
+    return redirect('incoming_requests')
+
+@login_required
+def incoming_requests_view(request):
+    # For donors — requests they received
+    incoming = BloodRequest.objects.filter(
+        donor=request.user
+    ).order_by('-created_at')
+
+    return render(request, 'recipients/incoming_requests.html', {
+        'incoming_requests': incoming,
     })

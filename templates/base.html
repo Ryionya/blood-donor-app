@@ -6,7 +6,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {% progressive_web_app_meta %}
-    <title>{% block title %}BloodLink{% endblock %}</title>
+    <title>{% block title %}BloodLine{% endblock %}</title>
 
     <!-- Bootstrap 5 -->
     <link
@@ -23,13 +23,20 @@
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
       <div class="container">
-        <a class="navbar-brand fw-bold" href="/">🩸 BloodLink</a>
+        <a class="navbar-brand fw-bold" href="/">🩸 BloodLine</a>
         <div class="ms-auto">
 
           {% if user.is_authenticated %}
 
-            {% if user.active_role == 'recipient' or user.role == 'recipient' %}
-              <a href="{% url 'browse_donors' %}" class="btn btn-outline-light btn-sm me-2">Browse Donors</a>
+            {% if user.role != 'admin' and not user.is_superuser %}
+                {% if user.active_role == 'recipient' or user.role == 'recipient' %}
+                    <a href="{% url 'browse_donors' %}" class="btn btn-outline-light btn-sm me-2">Browse Donors</a>
+                    <a href="{% url 'my_requests' %}" class="btn btn-outline-light btn-sm me-2">My Requests</a>
+                {% endif %}
+            {% endif %}
+
+            {% if user.active_role == 'donor' and user.role == 'donor' %}
+              <a href="{% url 'incoming_requests' %}" class="btn btn-outline-light btn-sm me-2">Incoming Requests</a>
             {% endif %}
 
             {% if user.role == 'donor' %}

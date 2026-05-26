@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Send Blood Request — BloodLink{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+
+                <h3 class="text-danger fw-bold mb-1">Send Donation Request</h3>
+                <p class="text-muted mb-4">
+                    Requesting from <strong>{{ donor.get_full_name|default:donor.username }}</strong>
+                    — Blood Type <span class="badge bg-danger">{{ donor.donor_profile.blood_type }}</span>
+                </p>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Hospital Name</label>
+                        <input type="text" name="hospital_name" class="form-control"
+                               placeholder="e.g. Philippine General Hospital" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Urgency Level</label>
+                        <select name="urgency" class="form-select" required>
+                            {% for value, label in urgency_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Message to Donor</label>
+                        <textarea name="message" class="form-control" rows="4"
+                                  placeholder="Explain your situation briefly..." required></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">Send Request</button>
+                        <a href="{% url 'browse_donors' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

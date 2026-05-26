@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}My Requests — BloodLink{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold text-danger mb-4">My Blood Requests</h3>
+
+{% if sent_requests %}
+<div class="row g-3">
+    {% for req in sent_requests %}
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0">
+                        {{ req.donor.get_full_name|default:req.donor.username }}
+                        <span class="badge bg-danger ms-1">{{ req.donor.donor_profile.blood_type }}</span>
+                    </h6>
+                    {% if req.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif req.status == 'accepted' %}
+                        <span class="badge bg-success">Accepted</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Declined</span>
+                    {% endif %}
+                </div>
+
+                <p class="text-muted small mb-1">🏥 {{ req.hospital_name }}</p>
+                <p class="text-muted small mb-1">⚠️ Urgency: {{ req.get_urgency_display }}</p>
+                <p class="text-muted small mb-2">📅 {{ req.created_at|date:"M d, Y" }}</p>
+
+                {% if req.status == 'accepted' %}
+                <div class="alert alert-success py-2 mb-0 small">
+                    <strong>Contact Info Revealed:</strong><br>
+                    📞 {{ req.donor.phone_number|default:"Not provided" }}<br>
+                    📍 {{ req.donor.location|default:"Not provided" }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="text-center py-5">
+    <div class="display-1">📋</div>
+    <h5 class="mt-3 text-muted">No requests yet</h5>
+    <a href="{% url 'browse_donors' %}" class="btn btn-danger mt-2">Browse Donors</a>
+</div>
+{% endif %}
+{% endblock %}
