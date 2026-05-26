@@ -10,4 +10,6 @@ urlpatterns = [
     path('admin-panel/review/<int:pk>/', views.admin_review_application, name='review_application'),
     path('admin-panel/dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('my-application/', views.my_application, name='my_application'),
+    path('log-donation/', views.log_donation_view, name='log_donation'),
+    path('cooldown-status/', views.cooldown_status_view, name='cooldown_status'),
 ]

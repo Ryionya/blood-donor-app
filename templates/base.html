@@ -35,6 +35,12 @@
                 {% endif %}
             {% endif %}
 
+            {% if user.is_authenticated and user.role == 'donor' and user.active_role == 'donor' %}
+                <a href="{% url 'cooldown_status' %}" class="btn btn-outline-light btn-sm me-2">
+                    🩸 Cooldown Tracker
+                </a>
+            {% endif %}
+
             {% if user.active_role == 'donor' and user.role == 'donor' %}
               <a href="{% url 'incoming_requests' %}" class="btn btn-outline-light btn-sm me-2">Incoming Requests</a>
             {% endif %}

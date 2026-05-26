@@ -4,9 +4,10 @@ from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from .decorators import admin_required
 from .forms import DonorApplicationForm
-from .models import DonorApplication 
+from .models import DonorApplication, DonorProfile, DonationLog 
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -130,4 +131,74 @@ def my_application(request):
 
     return render(request, "donors/my_application.html", {
         "app": app
+    })
+
+@login_required
+def log_donation_view(request):
+    # Only verified donors can log a donation
+    if request.user.role != 'donor':
+        messages.error(request, 'Only donors can log a donation.')
+        return redirect('home')
+
+    try:
+        profile = request.user.donor_profile
+    except DonorProfile.DoesNotExist:
+        messages.error(request, 'Donor profile not found.')
+        return redirect('home')
+
+    if not profile.is_verified:
+        messages.error(request, 'Only verified donors can log a donation.')
+        return redirect('home')
+
+    # Check if already on cooldown
+    if profile.is_on_cooldown():
+        messages.warning(request, f'You are currently on cooldown until {profile.cooldown_until.strftime("%B %d, %Y")}.')
+        return redirect('cooldown_status')
+
+    if request.method == 'POST':
+        notes = request.POST.get('notes', '')
+        DonationLog.objects.create(
+            donor=request.user,
+            notes=notes
+        )
+        messages.success(request, 'Donation logged! You are now on a 56-day cooldown.')
+        return redirect('cooldown_status')
+
+    return render(request, 'donors/log_donation.html', {
+        'profile': profile,
+    })
+
+@login_required
+def cooldown_status_view(request):
+    if request.user.role != 'donor':
+        messages.error(request, 'Only donors can view cooldown status.')
+        return redirect('home')
+
+    try:
+        profile = request.user.donor_profile
+    except DonorProfile.DoesNotExist:
+        messages.error(request, 'Donor profile not found.')
+        return redirect('home')
+
+    donation_logs = DonationLog.objects.filter(
+        donor=request.user
+    ).order_by('-donated_at')
+
+    # Auto-lift cooldown if it has expired
+    if profile.cooldown_until and timezone.now() >= profile.cooldown_until:
+        profile.is_available = True
+        profile.cooldown_until = None
+        profile.save()
+        messages.info(request, 'Your cooldown has ended! You are now available again.')
+
+    # Calculate days remaining
+    days_remaining = None
+    if profile.is_on_cooldown():
+        delta = profile.cooldown_until - timezone.now()
+        days_remaining = delta.days
+
+    return render(request, 'donors/cooldown_status.html', {
+        'profile': profile,
+        'donation_logs': donation_logs,
+        'days_remaining': days_remaining,
     })

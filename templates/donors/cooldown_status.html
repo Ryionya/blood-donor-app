@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Cooldown Status — BloodLink{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold text-danger mb-4">🩸 Donation Cooldown Tracker</h3>
+
+<!-- Status Card -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 
+            {% if profile.is_on_cooldown %}border-start border-warning border-4
+            {% else %}border-start border-success border-4{% endif %}">
+            <div class="card-body">
+                <h5 class="fw-bold mb-1">Current Status</h5>
+
+                {% if profile.is_on_cooldown %}
+                    <span class="badge bg-warning text-dark fs-6 mb-2">⏸ On Cooldown</span>
+                    <p class="text-muted mb-1">
+                        Cooldown ends on:
+                        <strong>{{ profile.cooldown_until|date:"F d, Y" }}</strong>
+                    </p>
+                    <p class="text-muted mb-3">
+                        Days remaining: <strong>{{ days_remaining }} day{{ days_remaining|pluralize }}</strong>
+                    </p>
+
+                    <!-- Cooldown Progress Bar -->
+                    {% with progress=days_remaining|floatformat:0 %}
+                    <div class="mb-2">
+                        <small class="text-muted">Cooldown Progress</small>
+                        <div class="progress mt-1" style="height: 10px;">
+                            <div class="progress-bar bg-warning"
+                                 style="width: {{ days_remaining|floatformat:0 }}%"
+                                 role="progressbar">
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ days_remaining }} of 56 days remaining</small>
+                    </div>
+                    {% endwith %}
+
+                {% else %}
+                    <span class="badge bg-success fs-6 mb-2">✅ Available</span>
+                    <p class="text-muted mb-3">You are eligible to donate blood.</p>
+                    <a href="{% url 'log_donation' %}" class="btn btn-danger btn-sm">
+                        Log a Completed Donation
+                    </a>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Blood Type Card -->
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body text-center d-flex flex-column justify-content-center">
+                <div class="display-3 fw-bold text-danger">{{ profile.blood_type }}</div>
+                <p class="text-muted mt-2">Your Blood Type</p>
+                {% if profile.is_verified %}
+                    <span class="badge bg-success">✔ Verified Donor</span>
+                {% else %}
+                    <span class="badge bg-secondary">Unverified</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Donation History -->
+<h5 class="fw-bold mb-3">Donation History</h5>
+{% if donation_logs %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in donation_logs %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ log.donated_at|date:"F d, Y" }}</td>
+                <td>{{ log.notes|default:"No notes" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-4">
+    <p class="text-muted">No donation history yet.</p>
+    <a href="{% url 'log_donation' %}" class="btn btn-outline-danger btn-sm">
+        Log Your First Donation
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}
