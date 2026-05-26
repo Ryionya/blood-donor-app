@@ -26,4 +26,5 @@ urlpatterns = [
     path('webpush/', include('webpush.urls')),
     path('', include('pwa.urls')),
     path('', include('donors.urls')),
+    path('dashboard/', include('dashboard.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
