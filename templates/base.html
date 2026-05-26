@@ -6,6 +6,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {% progressive_web_app_meta %}
+
     <title>{% block title %}BloodLine{% endblock %}</title>
 
     <!-- Bootstrap 5 -->
@@ -14,90 +15,238 @@
       rel="stylesheet"
     />
 
-    <!-- PWA manifest (M4 will fill this in) -->
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <!-- PWA manifest -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#C0392B" />
 
     {% block extra_css %}{% endblock %}
   </head>
+
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
       <div class="container">
         <a class="navbar-brand fw-bold" href="/">🩸 BloodLine</a>
-        <div class="ms-auto">
+
+        <div class="ms-auto d-flex align-items-center">
 
           {% if user.is_authenticated %}
 
-            {% if user.role != 'admin' and not user.is_superuser %}
-                {% if user.active_role == 'recipient' or user.role == 'recipient' %}
-                    <a href="{% url 'browse_donors' %}" class="btn btn-outline-light btn-sm me-2">Browse Donors</a>
-                    <a href="{% url 'my_requests' %}" class="btn btn-outline-light btn-sm me-2">My Requests</a>
-                {% endif %}
-            {% endif %}
+            <!-- Recipient Buttons -->
+            {% if user.role == 'recipient' and not user.is_superuser %}
 
-            {% if user.is_authenticated and user.role == 'donor' and user.active_role == 'donor' %}
-                <a href="{% url 'cooldown_status' %}" class="btn btn-outline-light btn-sm me-2">
-                    🩸 Cooldown Tracker
+              {% if user.active_role == 'recipient' or user.role == 'recipient' %}
+                <a
+                  href="{% url 'browse_donors' %}"
+                  class="btn btn-outline-light btn-sm me-2"
+                >
+                  Browse Donors
                 </a>
+
+                <a
+                  href="{% url 'my_requests' %}"
+                  class="btn btn-outline-light btn-sm me-2"
+                >
+                  My Requests
+                </a>
+              {% endif %}
+
             {% endif %}
 
-            {% if user.active_role == 'donor' and user.role == 'donor' %}
-              <a href="{% url 'incoming_requests' %}" class="btn btn-outline-light btn-sm me-2">Incoming Requests</a>
-            {% endif %}
-
-            {% if user.role == 'donor' %}
-              <a href="{% url 'switch_role' %}" class="btn btn-sm me-2 {% if user.active_role == 'donor' %}btn-outline-light{% else %}btn-warning{% endif %}">
-                {% if user.active_role == 'donor' %}Switch to Recipient{% else %}Switch to Donor{% endif %}
+            <!-- Donor Cooldown -->
+            {% if user.role == 'donor' and user.active_role == 'donor' %}
+              <a
+                href="{% url 'cooldown_status' %}"
+                class="btn btn-outline-light btn-sm me-2"
+              >
+                🩸 Cooldown Tracker
               </a>
             {% endif %}
 
-            {% if user.role == 'donor' %}
-              <a href="{% url 'apply_donor' %}" class="btn btn-light btn-sm me-2">Apply as Donor</a>
+            <!-- Incoming Requests -->
+            {% if user.role == 'donor' and user.active_role == 'donor' %}
+              <a
+                href="{% url 'incoming_requests' %}"
+                class="btn btn-outline-light btn-sm me-2"
+              >
+                Incoming Requests
+              </a>
             {% endif %}
 
-            <span class="text-white me-3">{{ user.username }}</span>
-            <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">Logout</a>
+            <!-- Switch Role -->
+            {% if user.role == 'donor' %}
+              <a
+                href="{% url 'switch_role' %}"
+                class="btn btn-sm me-2 {% if user.active_role == 'donor' %}btn-outline-light{% else %}btn-warning{% endif %}"
+              >
+                {% if user.active_role == 'donor' %}
+                  Switch to Recipient
+                {% else %}
+                  Switch to Donor
+                {% endif %}
+              </a>
+            {% endif %}
+
+            <!-- Apply as Donor -->
+            {% if user.role == 'donor' %}
+              <a
+                href="{% url 'apply_donor' %}"
+                class="btn btn-light btn-sm me-2"
+              >
+                Apply as Donor
+              </a>
+            {% endif %}
+
+            <!-- Notifications -->
+             {% if user.role == 'donor' %}
+            <div class="dropdown me-2">
+              <button
+                class="btn btn-link position-relative p-2 text-white"
+                id="notifDropdown"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i class="fa-solid fa-bell" style="font-size: 20px"></i>
+
+                {% if unread_count %}
+                  <span
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-light text-danger"
+                    style="font-size: 10px"
+                  >
+                    {{ unread_count }}
+                  </span>
+                {% endif %}
+              </button>
+
+              <ul
+                class="dropdown-menu dropdown-menu-end"
+                style="min-width: 280px"
+                aria-labelledby="notifDropdown"
+              >
+                <li>
+                  <h6 class="dropdown-header">Notifications</h6>
+                </li>
+
+                {% for notif in recent_notifications %}
+                  <li>
+                    <a
+                      class="dropdown-item py-2 rounded-3 {% if not notif.is_read %}bg-secondary-subtle border-start border-4 border-danger fw-semibold{% endif %}"
+                      href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'my_application' %}"
+                    >
+                      <div style="font-size: 13px {% if not notif.is_read %}; font-weight:600{% endif %}">
+                        {{ notif.message }}
+                      </div>
+
+                      <div style="font-size: 11px; color: #888">
+                        {{ notif.created_at|timesince }} ago
+                      </div>
+                    </a>
+                  </li>
+                {% empty %}
+                  <li>
+                    <span
+                      class="dropdown-item text-muted"
+                      style="font-size: 13px"
+                    >
+                      No new notifications
+                    </span>
+                  </li>
+                {% endfor %}
+
+                <li><hr class="dropdown-divider" /></li>
+
+                <li>
+                  <a
+                    class="dropdown-item text-center"
+                    style="font-size: 13px; color: #185fa5"
+                    href="{% url 'notifications_page' %}"
+                  >
+                    View all notifications →
+                  </a>
+                </li>
+              </ul>
+            </div>
+            {% endif %}
+
+            <!-- Username -->
+            <span class="text-white me-3">
+              {{ user.username }}
+            </span>
+
+            <!-- Logout -->
+            <a
+              href="{% url 'logout' %}"
+              class="btn btn-outline-light btn-sm"
+            >
+              Logout
+            </a>
 
           {% else %}
-            <a href="/login/" class="btn btn-outline-light btn-sm me-2">Login</a>
-            <a href="/register/" class="btn btn-light btn-sm">Register</a>
-          {% endif %}
 
+            <a
+              href="/login/"
+              class="btn btn-outline-light btn-sm me-2"
+            >
+              Login
+            </a>
+
+            <a
+              href="/register/"
+              class="btn btn-light btn-sm"
+            >
+              Register
+            </a>
+
+          {% endif %}
         </div>
       </div>
     </nav>
 
     <main class="container my-4">
-      {% if messages %} {% for message in messages %}
-      <div
-        class="alert alert-{{ message.tags }} alert-dismissible fade show"
-        role="alert"
-      >
-        {{ message }}
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="alert"
-        ></button>
-      </div>
-      {% endfor %} {% endif %} {% block content %}{% endblock %}
+
+      {% if messages %}
+        {% for message in messages %}
+          <div
+            class="alert alert-{{ message.tags }} alert-dismissible fade show"
+            role="alert"
+          >
+            {{ message }}
+
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+            ></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      {% block content %}{% endblock %}
     </main>
 
     <footer class="text-center text-muted py-4 border-top">
       <small>BloodLink — Connecting donors and recipients</small>
     </footer>
 
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     {% load webpush_notifications %}
+
     {% if user.is_authenticated %}
-        {% webpush_header %}
+      {% webpush_header %}
     {% endif %}
 
     {% block extra_js %}{% endblock %}
 
     {% if user.is_authenticated %}
-        {% webpush_button %}
+      {% webpush_button %}
     {% endif %}
+
   </body>
 </html>

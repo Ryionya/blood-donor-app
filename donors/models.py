@@ -64,3 +64,26 @@ class DonationLog(models.Model):
 
     def __str__(self):
         return f"{self.donor.username} donated on {self.donated_at.date()}"
+    
+class Notification(models.Model):
+    NOTIF_TYPES = [
+        ('approved', 'Application Approved'),
+        ('rejected', 'Application Rejected'),
+        ('request',  'Donation Request'),
+        ('accepted', 'Request Accepted'),
+    ]
+    user       = models.ForeignKey(
+                     settings.AUTH_USER_MODEL,
+                     on_delete=models.CASCADE,
+                     related_name='notifications'
+                 )
+    notif_type = models.CharField(max_length=20, choices=NOTIF_TYPES)
+    message    = models.TextField()
+    is_read    = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} — {self.notif_type}"

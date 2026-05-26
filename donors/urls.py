@@ -12,4 +12,7 @@ urlpatterns = [
     path('my-application/', views.my_application, name='my_application'),
     path('log-donation/', views.log_donation_view, name='log_donation'),
     path('cooldown-status/', views.cooldown_status_view, name='cooldown_status'),
+    path('notifications/', views.notifications_page, name='notifications_page'),
+    path('notifications/read/', views.mark_notifications_read, name='mark_notifications_read'),
+    path('notifications/<int:pk>/read/', views.mark_single_notification_read, name='mark_single_notification_read'),
 ]

@@ -10,6 +10,8 @@ from .forms import DonorApplicationForm
 from .models import DonorApplication, DonorProfile, DonationLog 
 from django.contrib.auth import get_user_model
 User = get_user_model()
+from .models import Notification
+from .utils import send_notification
 
 @login_required
 def apply_donor(request):
@@ -87,6 +89,13 @@ def admin_review_application(request, pk):
             profile = application.donor.donor_profile
             profile.is_verified = True
             profile.save()
+
+            send_notification(
+                user=application.donor,
+                notif_type='approved',
+                message='Your donor application has been approved! '
+                        'You are now a verified donor.')
+
             messages.success(request, f"{application.donor.username} has been approved.")
 
         elif action == 'reject':
@@ -96,6 +105,16 @@ def admin_review_application(request, pk):
             application.status = DonorApplication.STATUS_REJECTED
             application.admin_notes = note
             application.save()
+
+            send_notification(
+                user=application.donor,
+                notif_type='rejected',
+                message=f'Your donor application was not approved. '
+                        f'Reason: {note}'
+            )
+
+
+
             messages.warning(request, f"{application.donor.username} has been rejected.")
 
         return redirect('admin_application_queue')
@@ -202,3 +221,30 @@ def cooldown_status_view(request):
         'donation_logs': donation_logs,
         'days_remaining': days_remaining,
     })
+
+#Day 4
+@login_required
+def mark_notifications_read(request):
+    Notification.objects.filter(
+        user=request.user,
+        is_read=False
+    ).update(is_read=True)
+    from django.http import JsonResponse
+    return JsonResponse({'status': 'ok'})
+
+@login_required
+def notifications_page(request):
+    notifications = Notification.objects.filter(
+        user=request.user
+    ).order_by('-created_at')
+
+    return render(request, 'notifications/all.html', {
+        'notifications': notifications,
+    })
+
+@login_required
+def mark_single_notification_read(request, pk):
+    notification = get_object_or_404(Notification, pk=pk, user=request.user)
+    notification.is_read = True
+    notification.save()
+    return redirect('my_application')

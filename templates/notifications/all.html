@@ -1,0 +1,163 @@
+{% extends 'base.html' %} {% block content %}
+
+<div class="container py-4" style="max-width: 720px">
+  <!-- TOP BAR -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+      <i class="fa-solid fa-bell text-danger"></i>
+      Notifications
+    </h2>
+
+    <a
+      href="{% url 'home' %}    "
+      class="btn btn-outline-secondary btn-sm"
+    >
+      ← Back
+    </a>
+  </div>
+
+  {% if notifications %}
+
+  <div class="notification-wrapper">
+    {% for notif in notifications %}
+
+    <a
+      href="{% url 'my_application' %}"
+      class="notification-card text-decoration-none"
+    >
+      <div class="card border-0 shadow-sm rounded-4 p-3">
+        <div class="d-flex align-items-start gap-3">
+          <!-- ICON -->
+          <div>
+            {% if notif.notif_type == 'approved' %}
+            <div class="notif-icon bg-success-subtle text-success">
+              <i class="fa-solid fa-check"></i>
+            </div>
+
+            {% elif notif.notif_type == 'rejected' %}
+            <div class="notif-icon bg-danger-subtle text-danger">
+              <i class="fa-solid fa-xmark"></i>
+            </div>
+
+            {% elif notif.notif_type == 'request' %}
+            <div class="notif-icon bg-warning-subtle text-warning">
+              <i class="fa-solid fa-droplet"></i>
+            </div>
+
+            {% else %}
+            <div class="notif-icon bg-primary-subtle text-primary">
+              <i class="fa-solid fa-bell"></i>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- CONTENT -->
+          <div class="flex-grow-1">
+            <p class="mb-1 fw-semibold text-dark">{{ notif.message }}</p>
+
+            <small class="text-muted">
+              {{ notif.created_at|timesince }} ago
+            </small>
+          </div>
+
+          <!-- NEW BADGE -->
+          {% if not notif.is_read %}
+          <span class="badge rounded-pill bg-primary px-3 py-2"> New </span>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+
+    {% endfor %}
+  </div>
+
+  {% else %}
+
+  <!-- EMPTY STATE -->
+  <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+    <div class="mb-3">
+      <i
+        class="fa-regular fa-bell-slash text-muted"
+        style="font-size: 52px"
+      ></i>
+    </div>
+
+    <h5 class="fw-bold text-dark">No Notifications Yet</h5>
+
+    <p class="text-muted mb-0">You're all caught up for now.</p>
+  </div>
+
+  {% endif %}
+</div>
+
+<style>
+  body {
+    background: #f6f8fb;
+  }
+
+  /* BACK BUTTON */
+
+  .back-btn {
+    transition: 0.2s ease;
+    font-weight: 500;
+  }
+
+  .back-btn:hover {
+    background: #f1f3f5;
+    transform: translateY(-1px);
+  }
+
+  /* NOTIFICATION LIST */
+
+  .notification-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .notification-card {
+    transition: 0.2s ease;
+  }
+
+  .notification-card:hover {
+    transform: translateY(-2px);
+  }
+
+  /* CARD */
+
+  .notification-card .card {
+    background: white;
+    border: 1px solid #edf0f2;
+  }
+
+  /* ICON */
+
+  .notif-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 18px;
+  }
+
+  /* MOBILE */
+
+  @media (max-width: 576px) {
+    .container {
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+
+    .notif-icon {
+      width: 42px;
+      height: 42px;
+      font-size: 16px;
+    }
+  }
+</style>
+
+{% endblock %}
