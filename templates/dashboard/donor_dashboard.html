@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Donor Dashboard — BloodLink{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <h2 class="fw-bold text-danger">🩸 Donor Dashboard</h2>
+  <p class="text-muted">Welcome, <strong>{{ request.user.username }}</strong>!</p>
+
+  <!-- Availability Toggle -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Your Availability</h5>
+
+      {% if donor_profile.is_on_cooldown %}
+        <p class="text-warning">⏳ You are on cooldown until {{ donor_profile.cooldown_until|date:"N j, Y" }}. You cannot donate yet.</p>
+      {% else %}
+        <p class="text-muted">
+          Status:
+          {% if donor_profile.is_available %}
+            <span class="badge bg-success">Available</span>
+          {% else %}
+            <span class="badge bg-secondary">Unavailable</span>
+          {% endif %}
+        </p>
+        <form method="POST" action="{% url 'toggle_availability' %}">
+          {% csrf_token %}
+          {% if donor_profile.is_available %}
+            <button type="submit" class="btn btn-outline-danger">Set as Unavailable</button>
+          {% else %}
+            <button type="submit" class="btn btn-success">Set as Available</button>
+          {% endif %}
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Incoming Blood Requests -->
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Incoming Blood Requests</h5>
+
+      {% if incoming_requests %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-danger">
+              <tr>
+                <th>Recipient</th>
+                <th>Hospital</th>
+                <th>Urgency</th>
+                <th>Message</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for req in incoming_requests %}
+              <tr>
+                <td>{{ req.recipient.username }}</td>
+                <td>{{ req.hospital_name }}</td>
+                <td>
+                  {% if req.urgency == 'critical' %}
+                    <span class="badge bg-danger">Critical</span>
+                  {% elif req.urgency == 'high' %}
+                    <span class="badge bg-warning text-dark">High</span>
+                  {% elif req.urgency == 'medium' %}
+                    <span class="badge bg-info text-dark">Medium</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Low</span>
+                  {% endif %}
+                </td>
+                <td>{{ req.message }}</td>
+                <td>{{ req.created_at|date:"N j, Y" }}</td>
+                <td>
+                  {% if req.status == 'accepted' %}
+                    <span class="badge bg-success">Accepted</span>
+                  {% elif req.status == 'declined' %}
+                    <span class="badge bg-danger">Declined</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if req.status == 'pending' %}
+                    <form method="POST" action="{% url 'respond_to_request' req.id 'accept' %}" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-success">✅ Accept</button>
+                    </form>
+                    <form method="POST" action="{% url 'respond_to_request' req.id 'decline' %}" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-danger">❌ Decline</button>
+                    </form>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted">No incoming requests yet.</p>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
