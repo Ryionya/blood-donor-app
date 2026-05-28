@@ -1,31 +1,15 @@
-"""
-URL configuration for core project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('accounts.urls')),
-    path('', include('recipients.urls')),
-    path('', include('donors.urls')),
-    path('webpush/', include('webpush.urls')),
-    path('', include('pwa.urls')),
-    path('', include('donors.urls')),
-    path('dashboard/', include('dashboard.urls')),
+    path('admin/',      admin.site.urls),
+    path('',            include('accounts.urls')),       # register / login / logout / home / switch-role
+    path('recipients/', include('recipients.urls')),     # browse / request / my-requests
+    path('donors/',     include('donors.urls')),         # apply / dashboard (M2 / M4)
+    path('webpush/',    include('webpush.urls')),        # push notifications
+    path('',            include('pwa.urls')),            # PWA manifest / sw
+    path('dashboard/',  include('dashboard.urls')),      # admin dashboard
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

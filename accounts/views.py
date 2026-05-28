@@ -7,10 +7,23 @@ from .forms import RegisterForm, ProfileSetupForm, DonorProfileForm
 from donors.models import DonorProfile
 
 
+def home_view(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    if request.user.is_superuser or request.user.role == 'admin':
+        return redirect('admin_dashboard')
+    elif request.user.role == 'donor':
+        return redirect('cooldown_status')
+    elif request.user.role == 'recipient':
+        return redirect('browse_donors')
+    
+    return render(request, 'home.html')
+
+
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('home')
-
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -23,14 +36,12 @@ def register_view(request):
             return redirect('profile_setup')
     else:
         form = RegisterForm()
-
     return render(request, 'accounts/register.html', {'form': form})
 
 
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('home')
-
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -38,33 +49,22 @@ def login_view(request):
             login(request, user)
             messages.success(request, f'Welcome back, {user.first_name or user.username}!')
             if user.is_staff or user.is_superuser:
-              return redirect('admin_dashboard')
-            
+                return redirect('admin_dashboard')
             return redirect('home')
-            
         else:
             messages.error(request, 'Invalid username or password.')
     else:
         form = AuthenticationForm()
-
     return render(request, 'accounts/login.html', {'form': form})
-
-
-def logout_view(request):
-    logout(request)
-    messages.info(request, 'You have been logged out.')
-    return redirect('login')
 
 
 @login_required
 def profile_setup_view(request):
     user = request.user
     donor_profile = getattr(user, 'donor_profile', None)
-
     if request.method == 'POST':
         profile_form = ProfileSetupForm(request.POST, instance=user)
         donor_form = DonorProfileForm(request.POST, instance=donor_profile) if donor_profile else None
-
         if profile_form.is_valid():
             profile_form.save()
             if donor_form and donor_form.is_valid():
@@ -74,30 +74,25 @@ def profile_setup_view(request):
     else:
         profile_form = ProfileSetupForm(instance=user)
         donor_form = DonorProfileForm(instance=donor_profile) if donor_profile else None
-
     return render(request, 'accounts/profile_setup.html', {
         'profile_form': profile_form,
         'donor_form': donor_form,
     })
 
+
 @login_required
 def switch_role_view(request):
     user = request.user
-
-    # Only donors can switch
     if user.role != 'donor':
         messages.error(request, 'Only donors can switch roles.')
         return redirect('home')
-
     if user.active_role == 'donor':
         user.active_role = 'recipient'
+        user.save()
         messages.info(request, 'You are now browsing as a Recipient.')
+        return redirect('browse_donors')
     else:
         user.active_role = 'donor'
+        user.save()
         messages.info(request, 'You are now back in Donor mode.')
-
-    user.save()
-    return redirect('home')
-
-def home_view(request):
-    return render(request, 'home.html')
+        return redirect('cooldown_status')

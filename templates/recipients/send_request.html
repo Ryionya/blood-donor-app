@@ -1,50 +1,108 @@
 {% extends 'base.html' %}
-{% block title %}Send Blood Request — BloodLink{% endblock %}
+{% block title %}Request Donation — BloodLink{% endblock %}
 
 {% block content %}
+
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
+  <div class="col-md-7 col-lg-6">
 
-                <h3 class="text-danger fw-bold mb-1">Send Donation Request</h3>
-                <p class="text-muted mb-4">
-                    Requesting from <strong>{{ donor.get_full_name|default:donor.username }}</strong>
-                    — Blood Type <span class="badge bg-danger">{{ donor.donor_profile.blood_type }}</span>
-                </p>
+    <a href="{% url 'donor_profile' donor.pk %}" class="btn btn-sm btn-outline-secondary mb-3">
+      ← Back to Profile
+    </a>
 
-                <form method="post">
-                    {% csrf_token %}
+    <div class="card shadow border-0">
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Hospital Name</label>
-                        <input type="text" name="hospital_name" class="form-control"
-                               placeholder="e.g. Philippine General Hospital" required>
-                    </div>
+      <!-- Header -->
+      <div class="card-header bg-danger text-white py-3">
+        <h5 class="mb-0 fw-bold">🩸 Send Donation Request</h5>
+        <p class="mb-0 small opacity-75">
+          Requesting from
+          <strong>{{ donor.user.get_full_name|default:donor.user.username }}</strong>
+          — Blood Type <span class="badge bg-white text-danger">{{ donor.blood_type }}</span>
+          · 📍 {{ donor.location|default:"Location not set" }}
+        </p>
+      </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Urgency Level</label>
-                        <select name="urgency" class="form-select" required>
-                            {% for value, label in urgency_choices %}
-                                <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+      <div class="card-body p-4">
+        <form method="POST">
+          {% csrf_token %}
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Message to Donor</label>
-                        <textarea name="message" class="form-control" rows="4"
-                                  placeholder="Explain your situation briefly..." required></textarea>
-                    </div>
+          <!-- Hospital name -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Hospital / Clinic Name <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              name="hospital_name"
+              class="form-control"
+              placeholder="e.g. Philippine General Hospital"
+              required
+            >
+          </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-danger">Send Request</button>
-                        <a href="{% url 'browse_donors' %}" class="btn btn-outline-secondary">Cancel</a>
-                    </div>
-                </form>
-
+          <!-- Urgency level — radio button group -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Urgency Level <span class="text-danger">*</span>
+            </label>
+            <div class="row g-2">
+              {% for value, label in urgency_choices %}
+              <div class="col-6">
+                <input
+                  type="radio"
+                  class="btn-check"
+                  name="urgency"
+                  id="urgency-{{ value }}"
+                  value="{{ value }}"
+                  {% if value == 'medium' %}checked{% endif %}
+                  required
+                >
+                <label
+                  class="btn btn-outline-secondary w-100 text-start"
+                  for="urgency-{{ value }}"
+                >
+                  {% if value == 'low' %}🟢
+                  {% elif value == 'medium' %}🟡
+                  {% elif value == 'high' %}🟠
+                  {% else %}🔴{% endif %}
+                  {{ label }}
+                </label>
+              </div>
+              {% endfor %}
             </div>
-        </div>
+          </div>
+
+          <!-- Message -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              Message to Donor <span class="text-danger">*</span>
+            </label>
+            <textarea
+              name="message"
+              class="form-control"
+              rows="4"
+              placeholder="Explain your situation briefly — patient name, blood needed, when, etc."
+              required
+            ></textarea>
+            <div class="form-text">This message will be visible to the donor when reviewing your request.</div>
+          </div>
+
+          <!-- Privacy note -->
+          <div class="alert alert-warning py-2 small mb-4">
+            🔒 Contact information is only revealed <strong>after the donor accepts</strong> your request.
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-danger btn-lg">Send Request</button>
+            <a href="{% url 'browse_donors' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+
+        </form>
+      </div>
     </div>
+
+  </div>
 </div>
+
 {% endblock %}

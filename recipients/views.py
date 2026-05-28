@@ -1,118 +1,132 @@
-from django.shortcuts import render
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
 from django.utils import timezone
-from .models import BloodRequest
+
 from accounts.models import User
+from donors.models import DonorProfile, Notification
+from recipients.models import BloodRequest
 from webpush import send_user_notification
-from donors.models import Notification
 
 
+# ─────────────────────────────────────────────
+#  BROWSE / SEARCH PAGE
+# ─────────────────────────────────────────────
+
+@login_required
 def browse_donors_view(request):
-    # Placeholder donor data for now
-    # M3 Day 3 will replace this with real database queries
-    placeholder_donors = [
-        {
-            'name': 'Juan dela Cruz',
-            'blood_type': 'A+',
-            'location': 'Santa Rosa, Laguna',
-            'is_available': True,
-            'bio': 'Happy to help anyone in need.',
-        },
-        {
-            'name': 'Maria Santos',
-            'blood_type': 'O-',
-            'location': 'Calamba, Laguna',
-            'is_available': True,
-            'bio': 'Regular donor since 2020.',
-        },
-        {
-            'name': 'Carlo Reyes',
-            'blood_type': 'B+',
-            'location': 'Biñan, Laguna',
-            'is_available': False,
-            'bio': 'Currently on cooldown period.',
-        },
-        {
-            'name': 'Ana Lim',
-            'blood_type': 'AB+',
-            'location': 'San Pedro, Laguna',
-            'is_available': True,
-            'bio': 'Type AB+ universal plasma donor.',
-        },
-        {
-            'name': 'Ramon Garcia',
-            'blood_type': 'O+',
-            'location': 'Santa Rosa, Laguna',
-            'is_available': True,
-            'bio': 'Available on weekends.',
-        },
-        {
-            'name': 'Sofia Torres',
-            'blood_type': 'A-',
-            'location': 'Cabuyao, Laguna',
-            'is_available': False,
-            'bio': 'Currently unavailable.',
-        },
-    ]
+    donors = DonorProfile.objects.filter(
+        is_verified=True,
+        is_available=True,
+    ).select_related('user')
 
-    # Basic filtering from GET params (placeholder logic)
-    blood_type = request.GET.get('blood_type', '')
-    location = request.GET.get('location', '')
+    blood_type = request.GET.get('blood_type', '').strip()
+    location   = request.GET.get('location',   '').strip()
 
     if blood_type:
-        placeholder_donors = [d for d in placeholder_donors if d['blood_type'] == blood_type]
+        donors = donors.filter(blood_type=blood_type)
     if location:
-        placeholder_donors = [d for d in placeholder_donors if location.lower() in d['location'].lower()]
+        donors = donors.filter(location__icontains=location)
 
     blood_type_choices = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
     return render(request, 'recipients/browse.html', {
-        'donors': placeholder_donors,
-        'blood_type_choices': blood_type_choices,
+        'donors':              donors,
+        'blood_type_choices':  blood_type_choices,
         'selected_blood_type': blood_type,
-        'selected_location': location,
+        'selected_location':   location,
+        'result_count':        donors.count(),
     })
-    
+
+
+# ─────────────────────────────────────────────
+#  LOCATION LIST — JSON endpoint for voice parser
+# ─────────────────────────────────────────────
+
 @login_required
-def send_blood_request_view(request, donor_id):
-    donor = get_object_or_404(User, id=donor_id, role='donor')
+def location_list_view(request):
+    """
+    Returns all distinct non-empty locations stored in DonorProfile as JSON.
+    The voice parser fetches this on page load so it can fuzzy-match
+    spoken city names against real data instead of guessing free text.
+
+    Response: { "locations": ["Calamba", "Santa Rosa", "Biñan", ...] }
+    """
+    locations = (
+        DonorProfile.objects
+        .exclude(location__isnull=True)
+        .exclude(location__exact='')
+        .values_list('location', flat=True)
+        .distinct()
+        .order_by('location')
+    )
+    return JsonResponse({'locations': list(locations)})
+
+
+# ─────────────────────────────────────────────
+#  DONOR PROFILE DETAIL
+# ─────────────────────────────────────────────
+
+@login_required
+def donor_profile_view(request, donor_id):
+    donor = get_object_or_404(DonorProfile, pk=donor_id, is_verified=True)
+
+    existing_request = BloodRequest.objects.filter(
+        recipient=request.user,
+        donor=donor.user,
+        status='pending',
+    ).first()
+
+    return render(request, 'recipients/donor_profile.html', {
+        'donor':            donor,
+        'existing_request': existing_request,
+    })
+
+
+# ─────────────────────────────────────────────
+#  SEND BLOOD REQUEST
+# ─────────────────────────────────────────────
+
+@login_required
+def send_request_view(request, donor_id):
+    donor = get_object_or_404(
+        DonorProfile, pk=donor_id, is_verified=True, is_available=True,
+    )
 
     # Prevent donors from requesting themselves
-    if request.user == donor:
+    if request.user == donor.user:
         messages.error(request, 'You cannot send a request to yourself.')
         return redirect('browse_donors')
 
-    # Check if there is already a pending request to this donor
-    existing_request = BloodRequest.objects.filter(
+    existing = BloodRequest.objects.filter(
         recipient=request.user,
-        donor=donor,
-        status='pending'
-    ).first()
+        donor=donor.user,
+        status='pending',
+    ).exists()
 
-    if existing_request:
+    if existing:
         messages.warning(request, 'You already have a pending request to this donor.')
-        return redirect('browse_donors')
+        return redirect('donor_profile', donor_id=donor_id)
 
     if request.method == 'POST':
-        hospital_name = request.POST.get('hospital_name')
-        urgency = request.POST.get('urgency')
-        message = request.POST.get('message')
+        hospital_name = request.POST.get('hospital_name', '').strip()
+        urgency       = request.POST.get('urgency', 'medium')
+        message       = request.POST.get('message', '').strip()
 
-        if not hospital_name or not urgency or not message:
+        if not hospital_name or not message:
             messages.error(request, 'Please fill in all fields.')
         else:
             BloodRequest.objects.create(
                 recipient=request.user,
-                donor=donor,
+                donor=donor.user,
                 hospital_name=hospital_name,
                 urgency=urgency,
                 message=message,
-                status='pending'
+                status='pending',
             )
-            
-            # Notify the donor
+
+            # Push notification to donor
             try:
                 payload = {
                     'head': '🩸 New Blood Request',
@@ -120,42 +134,72 @@ def send_blood_request_view(request, donor_id):
                     'icon': '/static/images/icon-192.png',
                     'url': '/incoming-requests/',
                 }
-                send_user_notification(user=donor, payload=payload, ttl=1000)
+                send_user_notification(user=donor.user, payload=payload, ttl=1000)
             except Exception:
                 pass
-            
-            # Create in-app notification for donor
+
+            # In-app notification for donor
             Notification.objects.create(
-                user=donor,
+                user=donor.user,
                 notif_type='request',
                 message=f'{request.user.get_full_name() or request.user.username} sent you a blood donation request for {hospital_name}.',
             )
-            
-            messages.success(request, f'Request sent to {donor.get_full_name() or donor.username} successfully!')
+
+            messages.success(request, f'Request sent to {donor.user.get_full_name() or donor.user.username} successfully!')
             return redirect('my_requests')
 
+    urgency_choices = [
+        ('low',      'Low — Scheduled donation'),
+        ('medium',   'Medium — Needed soon'),
+        ('high',     'High — Urgent'),
+        ('critical', 'Critical — Emergency'),
+    ]
+
     return render(request, 'recipients/send_request.html', {
-        'donor': donor,
-        'urgency_choices': BloodRequest._meta.get_field('urgency').choices,
+        'donor':           donor,
+        'urgency_choices': urgency_choices,
     })
-    
+
+
+# ─────────────────────────────────────────────
+#  MY REQUESTS (recipient outbox)
+# ─────────────────────────────────────────────
+
 @login_required
 def my_requests_view(request):
-    # For recipients — requests they sent
-    sent_requests = BloodRequest.objects.filter(
-        recipient=request.user
-    ).order_by('-created_at')
+    requests_qs = BloodRequest.objects.filter(
+        recipient=request.user,
+    ).select_related('donor', 'donor__donor_profile').order_by('-created_at')
 
     return render(request, 'recipients/my_requests.html', {
-        'sent_requests': sent_requests,
+        'blood_requests': requests_qs,
     })
-    
-@login_required
-def manage_request_view(request, request_id):
-    # For donors — accept or decline incoming requests
-    blood_request = get_object_or_404(BloodRequest, id=request_id, donor=request.user)
 
-    if request.method == 'POST':
+
+# ─────────────────────────────────────────────
+#  INCOMING REQUESTS (donor inbox)
+# ─────────────────────────────────────────────
+
+@login_required
+def incoming_requests_view(request):
+    blood_requests = BloodRequest.objects.filter(
+        donor=request.user,
+    ).select_related('recipient').order_by('-created_at')
+
+    return render(request, 'recipients/incoming_requests.html', {
+        'blood_requests': blood_requests,
+    })
+
+
+# ─────────────────────────────────────────────
+#  RESPOND TO REQUEST (accept / decline)
+# ─────────────────────────────────────────────
+
+@login_required
+def respond_request_view(request, request_id):
+    blood_request = get_object_or_404(BloodRequest, pk=request_id, donor=request.user)
+
+    if request.method == 'POST' and blood_request.status == 'pending':
         action = request.POST.get('action')
 
         if action == 'accept':
@@ -163,8 +207,8 @@ def manage_request_view(request, request_id):
             blood_request.responded_at = timezone.now()
             blood_request.save()
             messages.success(request, 'You accepted the donation request.')
-            
-            # Notify the recipient
+
+            # Push notification to recipient
             try:
                 payload = {
                     'head': '✅ Donation Request Accepted!',
@@ -175,8 +219,8 @@ def manage_request_view(request, request_id):
                 send_user_notification(user=blood_request.recipient, payload=payload, ttl=1000)
             except Exception:
                 pass
-            
-            # Create in-app notification for recipient
+
+            # In-app notification for recipient
             Notification.objects.create(
                 user=blood_request.recipient,
                 notif_type='accepted',
@@ -188,20 +232,20 @@ def manage_request_view(request, request_id):
             blood_request.responded_at = timezone.now()
             blood_request.save()
             messages.info(request, 'You declined the donation request.')
-            
-            # Notify the recipient
+
+            # Push notification to recipient
             try:
                 payload = {
                     'head': '❌ Donation Request Declined',
-                    'body': f'Your blood request was declined. Try finding another donor.',
+                    'body': 'Your blood request was declined. Try finding another donor.',
                     'icon': '/static/images/icon-192.png',
                     'url': '/browse/',
                 }
                 send_user_notification(user=blood_request.recipient, payload=payload, ttl=1000)
             except Exception:
                 pass
-            
-            # Create in-app notification for recipient
+
+            # In-app notification for recipient
             Notification.objects.create(
                 user=blood_request.recipient,
                 notif_type='rejected',
@@ -209,14 +253,3 @@ def manage_request_view(request, request_id):
             )
 
     return redirect('incoming_requests')
-
-@login_required
-def incoming_requests_view(request):
-    # For donors — requests they received
-    incoming = BloodRequest.objects.filter(
-        donor=request.user
-    ).order_by('-created_at')
-
-    return render(request, 'recipients/incoming_requests.html', {
-        'incoming_requests': incoming,
-    })

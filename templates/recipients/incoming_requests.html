@@ -2,58 +2,92 @@
 {% block title %}Incoming Requests — BloodLink{% endblock %}
 
 {% block content %}
-<h3 class="fw-bold text-danger mb-4">Incoming Donation Requests</h3>
 
-{% if incoming_requests %}
-<div class="row g-3">
-    {% for req in incoming_requests %}
-    <div class="col-md-6">
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold mb-0">
-                        {{ req.recipient.get_full_name|default:req.recipient.username }}
-                    </h6>
-                    {% if req.status == 'pending' %}
-                        <span class="badge bg-warning text-dark">Pending</span>
-                    {% elif req.status == 'accepted' %}
-                        <span class="badge bg-success">Accepted</span>
-                    {% else %}
-                        <span class="badge bg-secondary">Declined</span>
-                    {% endif %}
-                </div>
-
-                <p class="text-muted small mb-1">🏥 {{ req.hospital_name }}</p>
-                <p class="text-muted small mb-1">⚠️ Urgency: {{ req.get_urgency_display }}</p>
-                <p class="text-muted small mb-2">💬 {{ req.message }}</p>
-                <p class="text-muted small mb-3">📅 {{ req.created_at|date:"M d, Y" }}</p>
-
-                {% if req.status == 'pending' %}
-                <form method="post" action="{% url 'manage_request' req.id %}">
-                    {% csrf_token %}
-                    <div class="d-flex gap-2">
-                        <button type="submit" name="action" value="accept"
-                                class="btn btn-success btn-sm flex-fill">
-                            ✅ Accept
-                        </button>
-                        <button type="submit" name="action" value="decline"
-                                class="btn btn-outline-secondary btn-sm flex-fill">
-                            ✕ Decline
-                        </button>
-                    </div>
-                </form>
-                {% endif %}
-
-            </div>
-        </div>
-    </div>
-    {% endfor %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold text-danger mb-0">🩸 Incoming Donation Requests</h3>
+    <p class="text-muted mb-0">People who need your blood</p>
+  </div>
 </div>
+
+{% if blood_requests %}
+  <div class="d-flex flex-column gap-3">
+  {% for req in blood_requests %}
+
+    <div class="card shadow-sm border-0
+      {% if req.status == 'accepted' %}border-start border-4 border-success
+      {% elif req.status == 'declined' %}border-start border-4 border-secondary opacity-75
+      {% else %}border-start border-4 border-warning{% endif %}
+    ">
+      <div class="card-body">
+        <div class="row align-items-start">
+
+          <!-- Left: recipient info + request details -->
+          <div class="col-md-8">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              {% if req.urgency == 'critical' %}
+                <span class="badge bg-danger">🔴 Critical</span>
+              {% elif req.urgency == 'high' %}
+                <span class="badge bg-warning text-dark" style="background:#fd7e14!important;">🟠 High</span>
+              {% elif req.urgency == 'medium' %}
+                <span class="badge bg-warning text-dark">🟡 Medium</span>
+              {% else %}
+                <span class="badge bg-success">🟢 Low</span>
+              {% endif %}
+              <strong>{{ req.recipient.get_full_name|default:req.recipient.username }}</strong>
+            </div>
+
+            <p class="mb-1 small text-muted">🏥 {{ req.hospital_name }}</p>
+            <p class="mb-1 small text-muted">⚠️ Urgency: {{ req.get_urgency_display }}</p>
+            <p class="mb-1 small">{{ req.message|truncatechars:150 }}</p>
+            <p class="text-muted small mb-0">📅 Sent {{ req.created_at|timesince }} ago</p>
+          </div>
+
+          <!-- Right: action buttons or status -->
+          <div class="col-md-4 text-md-end mt-2 mt-md-0">
+
+            {% if req.status == 'pending' %}
+              <form method="POST" action="{% url 'respond_request' req.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="accept">
+                <button type="submit" class="btn btn-success btn-sm mb-1 w-100">
+                  ✅ Accept
+                </button>
+              </form>
+              <form method="POST" action="{% url 'respond_request' req.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="decline">
+                <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
+                  ❌ Decline
+                </button>
+              </form>
+
+            {% elif req.status == 'accepted' %}
+              <span class="badge bg-success fs-6">✅ Accepted</span>
+              <div class="mt-2 p-2 bg-light rounded small text-start">
+                <p class="mb-1 fw-semibold">📞 Recipient Contact</p>
+                <p class="mb-0">{{ req.recipient.phone_number|default:"Not provided" }}</p>
+              </div>
+
+            {% elif req.status == 'declined' %}
+              <span class="badge bg-secondary fs-6">❌ Declined</span>
+
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% endfor %}
+  </div>
 
 {% else %}
-<div class="text-center py-5">
+  <div class="text-center py-5">
     <div class="display-1">📭</div>
-    <h5 class="mt-3 text-muted">No incoming requests yet</h5>
-</div>
+    <h5 class="mt-3 fw-bold">No incoming requests yet</h5>
+    <p class="text-muted">When someone needs your blood, their request will appear here.</p>
+  </div>
 {% endif %}
+
 {% endblock %}
