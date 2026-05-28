@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% block title %}Find a Donor — BloodLink{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ─────────────────────────────────────── -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold text-danger mb-0">🩸 Find a Donor</h3>
+    <p class="text-muted mb-0">Browse verified blood donors near you</p>
+  </div>
+  <span class="badge bg-danger fs-6">
+    {{ result_count }} donor{{ result_count|pluralize }} found
+  </span>
+</div>
+
+<!-- ── Search / Filter Card ────────────────────────────── -->
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="GET" id="search-form" class="row g-3 align-items-end">
+
+      <!-- Blood Type dropdown -->
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Blood Type</label>
+        <select name="blood_type" id="blood-type-select" class="form-select">
+          <option value="">All Blood Types</option>
+          {% for bt in blood_type_choices %}
+            <option value="{{ bt }}" {% if selected_blood_type == bt %}selected{% endif %}>
+              {{ bt }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Location + mic button -->
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Location</label>
+        <div class="input-group">
+          <input
+            type="text"
+            name="location"
+            id="location-input"
+            class="form-control"
+            placeholder="e.g. Santa Rosa, Calamba…"
+            value="{{ selected_location }}"
+            autocomplete="off"
+          >
+          <button
+            class="btn btn-outline-danger position-relative"
+            type="button"
+            id="voice-btn"
+            title="Search by voice"
+          >
+            <span id="voice-icon">🎤</span>
+            <!-- Pulse ring — shown only while listening -->
+            <span
+              id="voice-pulse"
+              class="position-absolute top-50 start-50 translate-middle rounded-circle d-none"
+              style="
+                width: 100%; height: 100%;
+                border: 2px solid #dc3545;
+                animation: pulse-ring 1s ease-out infinite;
+                pointer-events: none;
+              "
+            ></span>
+          </button>
+        </div>
+        <!-- Status line below the input -->
+        <div id="voice-status" class="form-text fw-semibold d-none"></div>
+      </div>
+
+      <!-- Search + Clear -->
+      <div class="col-md-3 d-grid gap-2 d-md-flex">
+        <button type="submit" class="btn btn-danger flex-fill">Search</button>
+        {% if selected_blood_type or selected_location %}
+          <a href="{% url 'browse' %}" class="btn btn-outline-secondary">✕ Clear</a>
+        {% endif %}
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- Active filter pills -->
+{% if selected_blood_type or selected_location %}
+<div class="mb-3">
+  {% if selected_blood_type %}
+    <span class="badge bg-danger me-1">Blood Type: {{ selected_blood_type }}</span>
+  {% endif %}
+  {% if selected_location %}
+    <span class="badge bg-secondary me-1">Location: {{ selected_location }}</span>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ── Donor Cards Grid ─────────────────────────────────── -->
+{% if donors %}
+  <div class="row g-4">
+    {% for donor in donors %}
+    <div class="col-sm-6 col-lg-4">
+      <div class="card h-100 shadow-sm border-0">
+
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+          <span class="badge bg-danger fs-5 px-3">{{ donor.blood_type }}</span>
+          <span class="badge bg-success">✅ Available</span>
+        </div>
+
+        <div class="card-body text-center">
+          <div
+            class="rounded-circle bg-danger text-white d-inline-flex align-items-center justify-content-center mb-3"
+            style="width:64px;height:64px;font-size:1.5rem;"
+          >
+            {{ donor.user.get_full_name|default:donor.user.username|first|upper }}
+          </div>
+          <h5 class="fw-bold mb-1">
+            {{ donor.user.get_full_name|default:donor.user.username }}
+            <span class="text-warning" title="Verified Donor">✔</span>
+          </h5>
+          <p class="text-muted small mb-1">📍 {{ donor.location|default:"Location not set" }}</p>
+          {% if donor.bio %}
+            <p class="text-muted small mb-0">{{ donor.bio|truncatechars:80 }}</p>
+          {% endif %}
+        </div>
+
+        <div class="card-footer bg-white border-top">
+          <a href="{% url 'donor_profile' donor.pk %}" class="btn btn-outline-danger btn-sm w-100">
+            View Profile &amp; Request
+          </a>
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+{% else %}
+  <div class="text-center py-5">
+    <div class="display-1">🔍</div>
+    <h5 class="mt-3 fw-bold">No donors found</h5>
+    <p class="text-muted">Try adjusting your filters, or check back later.</p>
+    <a href="{% url 'browse' %}" class="btn btn-outline-danger mt-2">Clear Filters</a>
+  </div>
+{% endif %}
+
+{% endblock %}
+
+
+{% block extra_js %}
+<style>
+  @keyframes pulse-ring {
+    0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0;   }
+  }
+</style>
+
+<script>
+(function () {
+
+  const voiceBtn    = document.getElementById('voice-btn');
+  const voiceIcon   = document.getElementById('voice-icon');
+  const voicePulse  = document.getElementById('voice-pulse');
+  const voiceStatus = document.getElementById('voice-status');
+  const btSelect    = document.getElementById('blood-type-select');
+  const locInput    = document.getElementById('location-input');
+  const searchForm  = document.getElementById('search-form');
+
+  const BT_MAP = [
+    ['AB+', 'ab positive', 'ab plus', 'ab+'],
+    ['AB-', 'ab negative', 'ab minus', 'ab-'],
+    ['A+',  'a positive',  'a plus',  'a+'],
+    ['A-',  'a negative',  'a minus', 'a-'],
+    ['B+',  'b positive',  'b plus',  'b+'],
+    ['B-',  'b negative',  'b minus', 'b-'],
+    ['O+',  'o positive',  'o plus',  'o+', 'o pos'],
+    ['O-',  'o negative',  'o minus', 'o-', 'o neg'],
+  ];
+
+  // Known speech recognition mishearings for Filipino city names
+  const LOCATION_ALIASES = {
+    'kabuyao':  'Cabuyao',
+    'kabuyaw':  'Cabuyao',
+    'kabuya':  'Cabuyao',
+    'kabu yao':  'Cabuyao',
+    'kamu yahoo':  'Cabuyao',
+    'columba':  'Calamba',
+    'calumba':  'Calamba',
+    'colombia': 'Calamba',
+    'alhambra': 'Calamba',
+    'alamba': 'Calamba',
+    'binyam':   'Biñan',
+    'binyan':   'Biñan',
+    'binan':    'Biñan',
+    'binian':   'Biñan',
+    'binion':   'Biñan',
+    'bing young':   'Biñan',
+  };
+
+  let dbLocations = [];
+
+  fetch("{% url 'location_list' %}")
+    .then(r => r.json())
+    .then(data => { dbLocations = data.locations || []; })
+    .catch(() => {});
+
+  // Normalize special characters
+  function normalize(str) {
+    return str.toLowerCase()
+      .replace(/ñ/g, 'n')
+      .replace(/é/g, 'e')
+      .replace(/á/g, 'a')
+      .replace(/í/g, 'i')
+      .replace(/ó/g, 'o')
+      .replace(/ú/g, 'u');
+  }
+
+  function parseBloodType(lower) {
+    for (const [canonical, ...variants] of BT_MAP) {
+      if (variants.some(v => lower.includes(v))) return canonical;
+    }
+    return '';
+  }
+
+  function parseLocation(lower) {
+    // Step 1 — check aliases first
+    for (const [alias, canonical] of Object.entries(LOCATION_ALIASES)) {
+      if (lower.includes(alias)) return canonical;
+    }
+
+    // Step 2 — isolate candidate
+    let candidate = '';
+    const inMatch = lower.match(/\bin\s+(.+)$/);
+    if (inMatch) {
+      candidate = inMatch[1].trim();
+    } else {
+      candidate = lower
+        .replace(/find\s+(me\s+)?a(n)?\s+/g, '')
+        .replace(/donor(\s+in)?/g, '')
+        .replace(/\b(positive|negative|plus|minus|pos|neg)\b/g, '')
+        .replace(/\b[abABOo][+-]?\b/g, '')
+        .trim();
+    }
+
+    if (!candidate) return '';
+
+    const normCandidate = normalize(candidate);
+
+    // Step 3 — fuzzy match against DB locations
+    const exact = dbLocations.find(l => normalize(l) === normCandidate);
+    if (exact) return exact;
+
+    const prefix = dbLocations.find(l => normalize(l).startsWith(normCandidate));
+    if (prefix) return prefix;
+
+    const spoken = dbLocations.find(l => normCandidate.startsWith(normalize(l)));
+    if (spoken) return spoken;
+
+    const spokenWords = normCandidate.split(/\s+/);
+    const wordMatch = dbLocations.find(l => {
+      const dbWords = normalize(l).split(/\s+/);
+      return spokenWords.some(w => w.length > 2 && dbWords.some(dw => dw.includes(w)))
+        || dbWords.some(dw => dw.length > 2 && normCandidate.includes(dw));
+    });
+    if (wordMatch) return wordMatch;
+
+    // Fallback — title-case raw candidate
+    return candidate
+      .split(' ')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+
+  function setListening(on) {
+    voiceIcon.textContent = on ? '🔴' : '🎤';
+    voicePulse.classList.toggle('d-none', !on);
+    voiceBtn.classList.toggle('btn-danger', on);
+    voiceBtn.classList.toggle('btn-outline-danger', !on);
+  }
+
+  function showStatus(msg, color) {
+    voiceStatus.textContent = msg;
+    voiceStatus.className = `form-text fw-semibold text-${color}`;
+    voiceStatus.classList.remove('d-none');
+  }
+
+  function hideStatus() {
+    voiceStatus.classList.add('d-none');
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    voiceBtn.disabled = true;
+    voiceBtn.title = 'Voice search is not supported in this browser. Try Chrome.';
+    voiceBtn.style.opacity = '0.4';
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.continuous     = false;
+  recognition.interimResults = false;
+  recognition.lang           = 'en-US';
+
+  voiceBtn.addEventListener('click', () => {
+    hideStatus();
+    setListening(true);
+    showStatus('🎙 Listening… speak now', 'danger');
+    try { recognition.start(); } catch (e) {}
+  });
+
+  recognition.onresult = function (event) {
+    const transcript = event.results[0][0].transcript;
+    const lower      = transcript.toLowerCase().trim();
+
+    setListening(false);
+    showStatus('🎙 Heard: "' + transcript + '"', 'danger');
+
+    const bloodType = parseBloodType(lower);
+    const location  = parseLocation(lower);
+
+    if (bloodType) btSelect.value = bloodType;
+    if (location)  locInput.value = location;
+
+    setTimeout(() => searchForm.submit(), 900);
+  };
+
+  recognition.onerror = function (event) {
+    setListening(false);
+    const msgs = {
+      'no-speech':     'No speech detected — tap the mic and try again.',
+      'audio-capture': 'Microphone not found.',
+      'not-allowed':   'Microphone permission denied. Allow it in your browser settings.',
+      'network':       'Network error during voice recognition.',
+    };
+    showStatus('⚠ ' + (msgs[event.error] || 'Error: ' + event.error), 'warning');
+  };
+
+  recognition.onend = function () {
+    setListening(false);
+  };
+
+})();
+</script>
+{% endblock %}

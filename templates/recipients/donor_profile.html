@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}{{ donor.user.get_full_name|default:donor.user.username }} — BloodLink{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+
+    <a href="{% url 'browse' %}" class="btn btn-sm btn-outline-secondary mb-3">
+      ← Back to Search
+    </a>
+
+    <div class="card shadow border-0">
+
+      <!-- Header strip -->
+      <div class="card-header bg-danger text-white text-center py-4">
+        <div
+          class="rounded-circle bg-white text-danger d-inline-flex align-items-center justify-content-center mb-2"
+          style="width:72px;height:72px;font-size:2rem;font-weight:700;"
+        >
+          {{ donor.user.get_full_name|default:donor.user.username|first|upper }}
+        </div>
+        <h4 class="mb-0 fw-bold">
+          {{ donor.user.get_full_name|default:donor.user.username }}
+          <span class="text-warning" title="Verified Donor">✔</span>
+        </h4>
+        <span class="badge bg-light text-danger fs-5 px-3 mt-1">{{ donor.blood_type }}</span>
+      </div>
+
+      <div class="card-body">
+
+        <!-- Details list -->
+        <ul class="list-group list-group-flush mb-4">
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">📍 Location</span>
+            <strong>{{ donor.location|default:"Not specified" }}</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">🩸 Blood Type</span>
+            <strong>{{ donor.blood_type }}</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="text-muted">✅ Status</span>
+            {% if donor.is_available %}
+              <span class="badge bg-success">Available</span>
+            {% else %}
+              <span class="badge bg-secondary">Unavailable</span>
+            {% endif %}
+          </li>
+        </ul>
+
+        {% if donor.bio %}
+          <p class="text-muted small fst-italic text-center">"{{ donor.bio }}"</p>
+        {% endif %}
+
+        <!-- Contact info — only shown when a request is accepted (M4 will wire push notif) -->
+        {# Contact is revealed on my_requests.html after acceptance, not here #}
+
+      </div>
+
+      <div class="card-footer bg-white text-center py-3">
+        {% if existing_request %}
+          <div class="alert alert-info mb-0 py-2">
+            ⏳ You already have a pending request to this donor.
+            <a href="{% url 'my_requests' %}">View it here.</a>
+          </div>
+        {% elif donor.is_available %}
+          <a href="{% url 'send_request' donor.pk %}" class="btn btn-danger w-100">
+            🩸 Send Donation Request
+          </a>
+        {% else %}
+          <button class="btn btn-secondary w-100" disabled>
+            Donor Currently Unavailable
+          </button>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

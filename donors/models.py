@@ -17,6 +17,7 @@ class DonorProfile(models.Model):
     is_available = models.BooleanField(default=True)
     cooldown_until = models.DateTimeField(null=True, blank=True)
     bio = models.TextField(blank=True)
+    location = models.CharField(max_length=255, blank=True, null=True)
 
     def is_on_cooldown(self):
         if self.cooldown_until and timezone.now() < self.cooldown_until:
