@@ -247,4 +247,5 @@ def mark_single_notification_read(request, pk):
     notification = get_object_or_404(Notification, pk=pk, user=request.user)
     notification.is_read = True
     notification.save()
-    return redirect('my_application')
+    next_url = request.GET.get('next', '/my-application/')
+    return redirect(next_url)

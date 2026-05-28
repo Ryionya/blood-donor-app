@@ -21,10 +21,14 @@
   <div class="notification-wrapper">
     {% for notif in notifications %}
 
-    <a
-      href="{% url 'my_application' %}"
-      class="notification-card text-decoration-none"
-    >
+    {% if notif.notif_type == 'request' %}
+    <a href="{% url 'incoming_requests' %}" class="notification-card text-decoration-none">
+    {% elif notif.notif_type == 'accepted' or notif.notif_type == 'rejected' %}
+    <a href="{% url 'my_requests' %}" class="notification-card text-decoration-none">
+    {% else %}
+    <a href="{% url 'my_application' %}" class="notification-card text-decoration-none">
+    {% endif %}
+
       <div class="card border-0 shadow-sm rounded-4 p-3">
         <div class="d-flex align-items-start gap-3">
           <!-- ICON -->

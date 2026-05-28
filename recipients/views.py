@@ -5,6 +5,9 @@ from django.contrib import messages
 from django.utils import timezone
 from .models import BloodRequest
 from accounts.models import User
+from webpush import send_user_notification
+from donors.models import Notification
+
 
 def browse_donors_view(request):
     # Placeholder donor data for now
@@ -108,6 +111,26 @@ def send_blood_request_view(request, donor_id):
                 message=message,
                 status='pending'
             )
+            
+            # Notify the donor
+            try:
+                payload = {
+                    'head': '🩸 New Blood Request',
+                    'body': f'{request.user.get_full_name() or request.user.username} needs your help at {hospital_name}.',
+                    'icon': '/static/images/icon-192.png',
+                    'url': '/incoming-requests/',
+                }
+                send_user_notification(user=donor, payload=payload, ttl=1000)
+            except Exception:
+                pass
+            
+            # Create in-app notification for donor
+            Notification.objects.create(
+                user=donor,
+                notif_type='request',
+                message=f'{request.user.get_full_name() or request.user.username} sent you a blood donation request for {hospital_name}.',
+            )
+            
             messages.success(request, f'Request sent to {donor.get_full_name() or donor.username} successfully!')
             return redirect('my_requests')
 
@@ -140,12 +163,50 @@ def manage_request_view(request, request_id):
             blood_request.responded_at = timezone.now()
             blood_request.save()
             messages.success(request, 'You accepted the donation request.')
+            
+            # Notify the recipient
+            try:
+                payload = {
+                    'head': '✅ Donation Request Accepted!',
+                    'body': f'{request.user.get_full_name() or request.user.username} accepted your blood request. Check their contact info now.',
+                    'icon': '/static/images/icon-192.png',
+                    'url': '/my-requests/',
+                }
+                send_user_notification(user=blood_request.recipient, payload=payload, ttl=1000)
+            except Exception:
+                pass
+            
+            # Create in-app notification for recipient
+            Notification.objects.create(
+                user=blood_request.recipient,
+                notif_type='accepted',
+                message=f'{request.user.get_full_name() or request.user.username} accepted your blood request. Contact info is now available.',
+            )
 
         elif action == 'decline':
             blood_request.status = 'declined'
             blood_request.responded_at = timezone.now()
             blood_request.save()
             messages.info(request, 'You declined the donation request.')
+            
+            # Notify the recipient
+            try:
+                payload = {
+                    'head': '❌ Donation Request Declined',
+                    'body': f'Your blood request was declined. Try finding another donor.',
+                    'icon': '/static/images/icon-192.png',
+                    'url': '/browse/',
+                }
+                send_user_notification(user=blood_request.recipient, payload=payload, ttl=1000)
+            except Exception:
+                pass
+            
+            # Create in-app notification for recipient
+            Notification.objects.create(
+                user=blood_request.recipient,
+                notif_type='rejected',
+                message=f'{request.user.get_full_name() or request.user.username} declined your blood request.',
+            )
 
     return redirect('incoming_requests')
 

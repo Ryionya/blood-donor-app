@@ -103,7 +103,7 @@
             {% endif %}
 
             <!-- Notifications -->
-             {% if user.role == 'donor' %}
+            {% if user.role == 'donor' or user.role == 'recipient' %}
             <div class="dropdown me-2">
               <button
                 class="btn btn-link position-relative p-2 text-white"
@@ -134,29 +134,31 @@
 
                 {% for notif in recent_notifications %}
                   <li>
-                    <a
-                      class="dropdown-item py-2 rounded-3 {% if not notif.is_read %}bg-secondary-subtle border-start border-4 border-danger fw-semibold{% endif %}"
-                      href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'my_application' %}"
-                    >
-                      <div style="font-size: 13px {% if not notif.is_read %}; font-weight:600{% endif %}">
-                        {{ notif.message }}
-                      </div>
-
-                      <div style="font-size: 11px; color: #888">
-                        {{ notif.created_at|timesince }} ago
-                      </div>
-                    </a>
+                      {% if notif.notif_type == 'request' %}
+                      <a class="dropdown-item py-2 rounded-3 {% if not notif.is_read %}bg-secondary-subtle border-start border-4 border-danger fw-semibold{% endif %}"
+                        href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'incoming_requests' %}">
+                      {% elif notif.notif_type == 'accepted' or notif.notif_type == 'rejected' %}
+                      <a class="dropdown-item py-2 rounded-3 {% if not notif.is_read %}bg-secondary-subtle border-start border-4 border-danger fw-semibold{% endif %}"
+                        href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'my_requests' %}">
+                      {% else %}
+                      <a class="dropdown-item py-2 rounded-3 {% if not notif.is_read %}bg-secondary-subtle border-start border-4 border-danger fw-semibold{% endif %}"
+                        href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'my_application' %}">
+                      {% endif %}
+                          <div style="font-size: 13px {% if not notif.is_read %}; font-weight:600{% endif %}">
+                              {{ notif.message }}
+                          </div>
+                          <div style="font-size: 11px; color: #888">
+                              {{ notif.created_at|timesince }} ago
+                          </div>
+                      </a>
                   </li>
-                {% empty %}
+                  {% empty %}
                   <li>
-                    <span
-                      class="dropdown-item text-muted"
-                      style="font-size: 13px"
-                    >
-                      No new notifications
-                    </span>
+                      <span class="dropdown-item text-muted" style="font-size: 13px">
+                          No new notifications
+                      </span>
                   </li>
-                {% endfor %}
+                  {% endfor %}
 
                 <li><hr class="dropdown-divider" /></li>
 
