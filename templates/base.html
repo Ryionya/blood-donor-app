@@ -20,9 +20,6 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
 
-    <!-- PWA manifest -->
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#C0392B" />
 
     <style>
       /* Pulse animation for the mic button while listening */
@@ -255,15 +252,94 @@
 
     {% load webpush_notifications %}
 
+    <!-- Push Notification Support -->
     {% if user.is_authenticated %}
-      {% webpush_header %}
+        {% webpush_header %}
     {% endif %}
 
     {% block extra_js %}{% endblock %}
 
-    {% if user.is_authenticated %}
-      {% webpush_button %}
-    {% endif %}
+    <!-- Modern Install Card -->
+<!-- Modern Install Card -->
+<div id="installCard"
+     class="d-none position-fixed bottom-0 end-0 m-3"
+     style="z-index:9999; width:95%; max-width:470px;">
 
+    <div class="bg-white shadow-lg rounded-4 p-4 pe-5 border position-relative">
+
+    <div class="d-flex align-items-center justify-content-between">
+
+      <!-- Left Side -->
+      <div class="d-flex align-items-center">
+          <div class="me-3">
+              <img src="/static/images/icon-192.png"
+                  alt="BloodLink Logo"
+                  class="rounded-4 shadow-sm"
+                  style="width:50px; height:50px; object-fit:cover;">
+          </div>
+
+        <div>
+            <h6 class="mb-1 fw-bold">Install BloodLink</h6>
+            <small class="text-muted">
+                Fast, offline-ready, app-like experience.
+            </small>
+        </div>
+      </div>
+
+      <!-- Right Side buttons -->
+      <div class="d-flex align-items-center gap-2">
+
+        <button id="installBtn"
+          class="btn btn-danger rounded-3 px-3 fw-semibold shadow-sm">
+            Install
+        </button>
+
+        <button id="closeInstallCard"
+          class="btn btn-sm position-absolute top-0 end-0 mt-2 me-2 border-0 bg-transparent text-muted"
+          style="font-size:18px;">
+          ✕
+        </button>
+      </div>
+    </div>
+    </div>
+</div>
+
+    <!-- PWA Install Script -->
+<script>
+let deferredPrompt;
+
+const installCard = document.getElementById('installCard');
+const installBtn = document.getElementById('installBtn');
+const closeInstallCard = document.getElementById('closeInstallCard');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+
+    deferredPrompt = e;
+
+    installCard.classList.remove('d-none');
+});
+
+installBtn.addEventListener('click', async () => {
+
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+
+    const { outcome } = await deferredPrompt.userChoice;
+
+    console.log('Install result:', outcome);
+
+    deferredPrompt = null;
+
+    installCard.classList.add('d-none');
+});
+
+closeInstallCard.addEventListener('click', () => {
+    installCard.classList.add('d-none');
+});
+</script>
+
+</body> 
   </body>
 </html>
