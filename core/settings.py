@@ -159,6 +159,9 @@ PWA_APP_DESCRIPTION = 'Find blood donors near you'
 PWA_APP_THEME_COLOR = '#C0392B'
 PWA_APP_BACKGROUND_COLOR = '#ffffff'
 PWA_APP_DISPLAY = 'standalone'
+PWA_APP_SCOPE = '/'
+PWA_APP_ORIENTATION = 'portrait'
+PWA_APP_STATUS_BAR_COLOR = 'default'
 PWA_APP_START_URL = '/'
 PWA_APP_ICONS = [
     {
