@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Stats — BloodLink{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold">Stats</h3>
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary btn-sm">← Back</a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center p-4">
+                <h2 class="fw-bold text-danger">{{ total_requests }}</h2>
+                <p class="text-muted mb-0">Total Blood Requests</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center p-4">
+                <h2 class="fw-bold text-warning">{{ pending_requests }}</h2>
+                <p class="text-muted mb-0">Pending Requests</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center p-4">
+                <h2 class="fw-bold text-success">{{ accepted_requests }}</h2>
+                <p class="text-muted mb-0">Accepted Requests</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center p-4">
+                <h2 class="fw-bold text-secondary">{{ declined_requests }}</h2>
+                <p class="text-muted mb-0">Declined Requests</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center p-4">
+                <h2 class="fw-bold text-primary">{{ total_donations }}</h2>
+                <p class="text-muted mb-0">Total Donations Logged</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

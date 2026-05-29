@@ -249,3 +249,34 @@ def mark_single_notification_read(request, pk):
     notification.save()
     next_url = request.GET.get('next', '/my-application/')
     return redirect(next_url)
+
+@login_required
+@admin_required
+def admin_manage_users(request):
+    users = User.objects.all().order_by('date_joined')
+    return render(request, 'admin/manage_users.html', {'users': users})
+
+
+@login_required
+@admin_required
+def admin_donor_list(request):
+    donors = DonorProfile.objects.filter(
+        is_verified=True
+    ).select_related('user').order_by('user__date_joined')
+    return render(request, 'admin/donor_list.html', {'donors': donors})
+
+
+@login_required
+@admin_required
+def admin_stats(request):
+    from recipients.models import BloodRequest
+    from donors.models import DonationLog
+
+    context = {
+        'total_requests': BloodRequest.objects.count(),
+        'pending_requests': BloodRequest.objects.filter(status='pending').count(),
+        'accepted_requests': BloodRequest.objects.filter(status='accepted').count(),
+        'declined_requests': BloodRequest.objects.filter(status='declined').count(),
+        'total_donations': DonationLog.objects.count(),
+    }
+    return render(request, 'admin/stats.html', context)
