@@ -278,5 +278,26 @@
       {% webpush_button %}
     {% endif %}
 
+    {% if request.path != '/login/' %}
+<script>
+  if ('serviceWorker' in navigator) {
+
+    window.addEventListener('load', () => {
+
+      navigator.serviceWorker
+        .register('/static/js/service-worker.js')
+        .then(registration => {
+          console.log('Service Worker registered:', registration.scope);
+        })
+        .catch(error => {
+          console.error('Service Worker registration failed:', error);
+        });
+
+    });
+
+  }
+</script>
+{% endif %}
+
   </body>
 </html>
