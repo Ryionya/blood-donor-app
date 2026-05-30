@@ -25,12 +25,33 @@ def register_view(request):
     if request.user.is_authenticated:
         return redirect('home')
     if request.method == 'POST':
-        form = RegisterForm(request.POST)
+        form = RegisterForm(request.POST, request.FILES)
         if form.is_valid():
+
+            # Validate profile picture — required
+            if 'profile_picture' not in request.FILES:
+                messages.error(request, 'Profile picture is required.')
+                return render(request, 'accounts/register.html', {'form': form})
+
+            pic = request.FILES['profile_picture']
+            allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+            max_size = 5 * 1024 * 1024  # 5MB
+
+            if pic.content_type not in allowed_types:
+                messages.error(request, 'Invalid file type. Only JPG, PNG, GIF, and WEBP are allowed.')
+                return render(request, 'accounts/register.html', {'form': form})
+
+            if pic.size > max_size:
+                messages.error(request, 'File is too large. Maximum size is 2MB.')
+                return render(request, 'accounts/register.html', {'form': form})
+
             user = form.save()
             # Auto-create DonorProfile if registering as donor
             if user.role == 'donor':
                 DonorProfile.objects.create(user=user)
+            # Save profile picture
+            user.profile_picture = pic
+            user.save()
             login(request, user)
             messages.success(request, f'Welcome, {user.first_name or user.username}! Please complete your profile.')
             return redirect('profile_setup')
@@ -70,6 +91,28 @@ def profile_setup_view(request):
     user = request.user
     donor_profile = getattr(user, 'donor_profile', None)
     if request.method == 'POST':
+
+        # Handle profile picture removal
+        if request.POST.get('remove_profile_picture') == '1':
+            if user.profile_picture:
+                user.profile_picture.delete(save=False)  # deletes the file from storage
+                user.profile_picture = None
+                user.save()
+            messages.success(request, 'Profile picture removed.')
+            return redirect('profile_setup')
+
+        # Validate profile picture upload
+        if 'profile_picture' in request.FILES:
+            pic = request.FILES['profile_picture']
+            allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+            max_size = 5 * 1024 * 1024  # 5MB
+            if pic.content_type not in allowed_types:
+                messages.error(request, 'Invalid file type. Only JPG, PNG, GIF, and WEBP are allowed.')
+                return redirect('profile_setup')
+            if pic.size > max_size:
+                messages.error(request, 'File is too large. Maximum size is 2MB.')
+                return redirect('profile_setup')
+
         profile_form = ProfileSetupForm(request.POST, request.FILES, instance=user)
         donor_form = DonorProfileForm(request.POST, instance=donor_profile) if donor_profile else None
         if profile_form.is_valid():
