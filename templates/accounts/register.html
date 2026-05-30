@@ -7,11 +7,37 @@
         <div class="card shadow-sm">
             <div class="card-body p-4">
                 <h3 class="card-title text-danger mb-4">Create Account</h3>
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
+
+                    <!-- Profile Picture Upload (moved to top) -->
+                    <div class="mb-4 text-center">
+                        <label class="form-label fw-semibold d-block">Profile Picture</label>
+                        <div class="position-relative d-inline-block">
+                            <img id="avatarPreview"
+                                src="https://ui-avatars.com/api/?name=User&background=C0392B&color=fff&size=128"
+                                class="rounded-circle border border-3 border-danger"
+                                style="width:100px; height:100px; object-fit:cover;">
+                            <label for="profilePicInput"
+                                class="position-absolute bottom-0 end-0 bg-danger text-white rounded-circle d-flex align-items-center justify-content-center"
+                                style="width:28px; height:28px; cursor:pointer;">
+                                <i class="fa-solid fa-camera" style="font-size:12px;"></i>
+                            </label>
+                        </div>
+                        <input type="file" id="profilePicInput" name="profile_picture"
+                            accept="image/*" class="d-none">
+                        <div class="mt-1">
+                            <small class="text-muted">Click the camera icon to upload</small><br>
+                            <small class="text-muted">JPG, PNG, GIF, WEBP only — max 5MB</small>
+                        </div>
+                        {% for error in form.profile_picture.errors %}
+                            <div class="invalid-feedback d-block mt-1 text-center">{{ error }}</div>
+                        {% endfor %}
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">I am registering as:</label>
+                        <div class="d-flex gap-3 justify-content-center">
                         {% for radio in form.role %}
                             <div class="form-check">
                                 {{ radio.tag }}
@@ -20,10 +46,11 @@
                                 </label>
                             </div>
                         {% endfor %}
+                        </div>
                     </div>
 
                     {% for field in form %}
-                        {% if field.name != 'role' %}
+                        {% if field.name != 'role' and field.name != 'profile_picture' %}
                         <div class="mb-3">
                             <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             <input type="{{ field.field.widget.input_type }}"
@@ -47,4 +74,36 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('profilePicInput').addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Invalid file type. Only JPG, PNG, GIF, and WEBP are allowed.');
+                this.value = '';
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('File is too large. Maximum size is 5MB.');
+                this.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('avatarPreview').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
 {% endblock %}

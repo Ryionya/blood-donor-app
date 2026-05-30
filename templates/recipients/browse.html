@@ -6,8 +6,13 @@
 <!-- ── Page Header ─────────────────────────────────────── -->
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
-    <h3 class="fw-bold text-danger mb-0">🩸 Find a Donor</h3>
-    <p class="text-muted mb-0">Browse verified blood donors near you</p>
+    <div class="d-flex align-items-center gap-2">
+      <span style="font-size: 2rem; line-height: 1;">🩸</span>
+      <div>
+        <h3 class="fw-bold text-danger mb-0">Find a Donor</h3>
+        <p class="text-muted mb-0">Browse verified blood donors near you</p>
+      </div>
+    </div>
   </div>
   <span class="badge bg-danger fs-6">
     {{ result_count }} donor{{ result_count|pluralize }} found
@@ -32,41 +37,20 @@
         </select>
       </div>
 
-      <!-- Location + mic button -->
+      <!-- Location -->
       <div class="col-md-6">
-        <label class="form-label fw-semibold">Location</label>
-        <div class="input-group">
-          <input
-            type="text"
-            name="location"
-            id="location-input"
-            class="form-control"
-            placeholder="e.g. Santa Rosa, Calamba…"
-            value="{{ selected_location }}"
-            autocomplete="off"
-          >
-          <button
-            class="btn btn-outline-danger position-relative"
-            type="button"
-            id="voice-btn"
-            title="Search by voice"
-          >
-            <span id="voice-icon">🎤</span>
-            <!-- Pulse ring — shown only while listening -->
-            <span
-              id="voice-pulse"
-              class="position-absolute top-50 start-50 translate-middle rounded-circle d-none"
-              style="
-                width: 100%; height: 100%;
-                border: 2px solid #dc3545;
-                animation: pulse-ring 1s ease-out infinite;
-                pointer-events: none;
-              "
-            ></span>
-          </button>
-        </div>
-        <!-- Status line below the input -->
-        <div id="voice-status" class="form-text fw-semibold d-none"></div>
+          <label class="form-label fw-semibold">Location</label>
+          <select name="location" 
+                  id="location-input"
+                  class="form-select select2-city"
+                  data-placeholder="Search city or municipality...">
+              <option value="">All Locations</option>
+              {% for city in ph_cities %}
+                  <option value="{{ city }}" {% if selected_location == city %}selected{% endif %}>
+                      {{ city }}
+                  </option>
+              {% endfor %}
+          </select>
       </div>
 
       <!-- Search + Clear -->
@@ -201,7 +185,6 @@
     ['O-',  'o negative',  'o minus', 'o-', 'o neg'],
   ];
 
-  // Known speech recognition mishearings for Filipino city names
   const LOCATION_ALIASES = {
     'kabuyao':     'Cabuyao',
     'kabuyaw':     'Cabuyao',
@@ -246,12 +229,10 @@
   }
 
   function parseLocation(lower) {
-    // Step 1 — check aliases first
     for (const [alias, canonical] of Object.entries(LOCATION_ALIASES)) {
       if (lower.includes(alias)) return canonical;
     }
 
-    // Step 2 — isolate candidate
     let candidate = '';
     const inMatch = lower.match(/\bin\s+(.+)$/);
     if (inMatch) {
@@ -269,7 +250,6 @@
 
     const normCandidate = normalize(candidate);
 
-    // Step 3 — fuzzy match against DB locations
     const exact = dbLocations.find(l => normalize(l) === normCandidate);
     if (exact) return exact;
 
@@ -287,7 +267,6 @@
     });
     if (wordMatch) return wordMatch;
 
-    // Fallback — title-case raw candidate
     return candidate
       .split(' ')
       .map(w => w.charAt(0).toUpperCase() + w.slice(1))
@@ -363,5 +342,16 @@
   };
 
 })();
+</script>
+
+<script>
+$(document).ready(function() {
+    $('.select2-city').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Search city or municipality...',
+        allowClear: true,
+        width: '100%',
+    });
+});
 </script>
 {% endblock %}
