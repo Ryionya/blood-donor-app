@@ -9,6 +9,13 @@ from donors.models import DonorProfile, Notification
 from recipients.models import BloodRequest
 from webpush import send_user_notification
 
+import json
+from core.groq_service import parse_voice_intent, get_donor_recommendation
+from django.urls import reverse
+
+import json as json_module
+from django.conf import settings
+import os
 
 # ─────────────────────────────────────────────
 #  BROWSE / SEARCH PAGE
@@ -16,27 +23,40 @@ from webpush import send_user_notification
 
 @login_required
 def browse_donors_view(request):
+    blood_type = request.GET.get('blood_type', '')
+    location = request.GET.get('location', '')
+
     donors = DonorProfile.objects.filter(
         is_verified=True,
         is_available=True,
-    ).select_related('user')
-
-    blood_type = request.GET.get('blood_type', '').strip()
-    location   = request.GET.get('location',   '').strip()
+    ).exclude(user=request.user).select_related('user')
 
     if blood_type:
         donors = donors.filter(blood_type=blood_type)
+
     if location:
-        donors = donors.filter(location__icontains=location)
+        donors = donors.filter(user__location__icontains=location)
+
+    # AI Recommendation
+    ai_recommendation = None
+    if donors.exists() and (blood_type or location):
+        try:
+            ai_recommendation = get_donor_recommendation(
+                donors=list(donors),
+                blood_type_needed=blood_type,
+                location=location
+            )
+        except Exception:
+            pass
 
     blood_type_choices = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
     return render(request, 'recipients/browse.html', {
-        'donors':              donors,
-        'blood_type_choices':  blood_type_choices,
+        'donors': donors,
+        'blood_type_choices': blood_type_choices,
         'selected_blood_type': blood_type,
-        'selected_location':   location,
-        'result_count':        donors.count(),
+        'selected_location': location,
+        'ai_recommendation': ai_recommendation,
     })
 
 
@@ -260,3 +280,52 @@ def respond_request_view(request, request_id):
             )
 
     return redirect('incoming_requests')
+
+# ─────────────────────────────────────────────
+#  Voice Intent API View
+# ─────────────────────────────────────────────
+
+@login_required
+def voice_intent_view(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        transcript = data.get('transcript', '')
+        if not transcript:
+            return JsonResponse({'type': 'unknown'})
+
+        intent = parse_voice_intent(
+            transcript=transcript,
+            user_role=request.user.role,
+            active_role=request.user.active_role
+        )
+
+        # If navigation intent, resolve the URL
+        if intent.get('type') == 'navigate':
+            page = intent.get('page')
+            try:
+                url = reverse(page)
+                intent['url'] = url
+            except Exception:
+                intent['type'] = 'unknown'
+
+        # If logout intent
+        if intent.get('type') == 'logout':
+            intent['url'] = reverse('logout')
+
+        return JsonResponse(intent)
+
+    except Exception as e:
+        return JsonResponse({'type': 'unknown'})
+
+    
+def ph_cities_view(request):
+    try:
+        cities_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'ph_cities.json')
+        with open(cities_path, 'r') as f:
+            data = json_module.load(f)
+        return JsonResponse(data)
+    except Exception:
+        return JsonResponse({'cities': []})

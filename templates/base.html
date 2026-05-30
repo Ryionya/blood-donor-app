@@ -117,6 +117,17 @@
                     </li>
                   {% endif %}
 
+                  <!-- Global Voice Control -->
+                  {% if user.is_authenticated %}
+                  <li class="nav-item me-1">
+                      <button id="global-voice-btn"
+                              class="btn btn-outline-light btn-sm position-relative"
+                              title="Voice Command (Filipino/English)">
+                          <span id="global-voice-icon">🎤</span>
+                      </button>
+                  </li>
+                  {% endif %}
+
                   <!-- Notifications -->
                   {% if user.role == 'donor' or user.role == 'recipient' %}
                     <li class="nav-item">
@@ -357,5 +368,153 @@
     });
     </script>
     {% endif %}
+
+    <style>
+    @keyframes pulse-ring {
+        0%   { transform: scale(1);   opacity: 0.8; }
+        100% { transform: scale(1.8); opacity: 0;   }
+    }
+    .voice-listening {
+        animation: pulse-ring 1s ease-out infinite;
+        box-shadow: 0 0 0 4px rgba(255,255,255,0.4);
+    }
+    </style>
+
+    <script>
+    (function() {
+        const btn  = document.getElementById('global-voice-btn');
+        const icon = document.getElementById('global-voice-icon');
+
+        if (!btn) return;
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            btn.disabled = true;
+            btn.title = 'Voice not supported. Use Chrome.';
+            btn.style.opacity = '0.4';
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous     = false;
+        recognition.interimResults = false;
+        recognition.lang           = 'fil-PH';
+
+        let isListening = false;
+
+        function showToast(msg, type='success') {
+            // Remove existing toast
+            const existing = document.getElementById('voice-toast');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.id = 'voice-toast';
+            toast.className = `alert alert-${type} position-fixed shadow`;
+            toast.style.cssText = 'bottom:24px;right:24px;z-index:9999;min-width:280px;max-width:380px;';
+            toast.innerHTML = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 4000);
+        }
+
+        function setListening(on) {
+            isListening = on;
+            icon.textContent = on ? '🔴' : '🎤';
+            btn.classList.toggle('voice-listening', on);
+            btn.classList.toggle('btn-danger', on);
+            btn.classList.toggle('btn-outline-light', !on);
+        }
+
+        btn.addEventListener('click', () => {
+            if (isListening) {
+                recognition.stop();
+                return;
+            }
+            setListening(true);
+            showToast('🎙️ Listening… speak in Filipino or English', 'info');
+            try { recognition.start(); } catch(e) { setListening(false); }
+        });
+
+        recognition.onresult = async function(event) {
+            const transcript = event.results[0][0].transcript.trim();
+            console.log('Transcript:', transcript);
+            setListening(false);
+            showToast(`🎙️ Heard: "<strong>${transcript}</strong>"`, 'info');
+
+            try {
+                const response = await fetch("{% url 'voice_intent' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    },
+                    body: JSON.stringify({ transcript: transcript })
+                });
+
+                const intent = await response.json();
+                console.log('Intent:', intent);
+                
+                if (intent.type === 'navigate' && intent.page === 'switch_role') {
+                    showToast('🔄 Switching role…', 'info');
+                    setTimeout(() => window.location.href = "{% url 'switch_role' %}", 1000);
+
+                } else if (intent.type === 'navigate' && intent.url) {
+                    showToast(`✅ Going to <strong>${intent.page.replace(/_/g, ' ')}</strong>…`, 'success');
+                    setTimeout(() => window.location.href = intent.url, 1000);
+
+                } else if (intent.type === 'logout') {
+                    showToast('👋 Logging out…', 'info');
+                    setTimeout(() => {
+                        const form = document.querySelector('form[action*="logout"]');
+                        if (form) form.submit();
+                        else window.location.href = '/logout/';
+                    }, 1000);
+
+                } else if (intent.type === 'search') {
+                    // If on browse page, fill in the filters
+                    const btSelect  = document.getElementById('blood-type-select');
+                    const locInput  = document.getElementById('location-input');
+                    const searchForm = document.getElementById('search-form');
+
+                    if (btSelect && locInput && searchForm) {
+                        if (intent.blood_type) btSelect.value = intent.blood_type;
+                        if (intent.location)   locInput.value = intent.location;
+                        showToast(`🔍 Searching for <strong>${intent.blood_type || 'any'}</strong> donors in <strong>${intent.location || 'any location'}</strong>…`, 'success');
+                        setTimeout(() => searchForm.submit(), 1000);
+                    } else {
+                        // Not on browse page — navigate there with params
+                        let url = "{% url 'browse_donors' %}?";
+                        if (intent.blood_type) url += `blood_type=${encodeURIComponent(intent.blood_type)}&`;
+                        if (intent.location)   url += `location=${encodeURIComponent(intent.location)}`;
+                        showToast(`🔍 Finding donors…`, 'success');
+                        setTimeout(() => window.location.href = url, 1000);
+                    }
+
+                } else {
+                    showToast('⚠️ Command not recognized. Try: <em>"Go to browse page"</em> or <em>"Find A+ in Calamba"</em>', 'warning');
+                }
+
+            } catch(err) {
+                showToast('⚠️ Could not process command. Please try again.', 'warning');
+            }
+        };
+
+        recognition.onerror = function(event) {
+            setListening(false);
+            const msgs = {
+                'no-speech':     '🎙️ No speech detected — try again.',
+                'not-allowed':   '🎙️ Microphone permission denied.',
+                'network':       '🎙️ Network error during voice recognition.',
+                'audio-capture': '🎙️ Microphone not found.',
+            };
+            showToast(msgs[event.error] || `⚠️ Error: ${event.error}`, 'warning');
+        };
+
+        recognition.onend = function() {
+            setListening(false);
+        };
+
+    })();
+    </script>
+
     </body> 
     </html>
