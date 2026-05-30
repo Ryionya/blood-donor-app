@@ -131,8 +131,10 @@
             {{ donor.user.get_full_name|default:donor.user.username|first|upper }}
           </div>
           <h5 class="fw-bold mb-1">
-            {{ donor.user.get_full_name|default:donor.user.username }}
-            <span class="text-warning" title="Verified Donor">✔</span>
+            {{ donor.user.username }}
+            <span title="Verified Donor" style="color:#185fa5; font-size:14px;">
+              <i class="fa-solid fa-circle-check"></i>
+            </span>
           </h5>
           <p class="text-muted small mb-1">📍 {{ donor.location|default:"Location not set" }}</p>
           {% if donor.bio %}
