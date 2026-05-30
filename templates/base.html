@@ -19,6 +19,12 @@
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         />
+        
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        
+        <!-- Select2 CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
 
         <style>
@@ -477,16 +483,35 @@
 
                     if (btSelect && locInput && searchForm) {
                         if (intent.blood_type) btSelect.value = intent.blood_type;
-                        if (intent.location)   locInput.value = intent.location;
+                        
+                        if (intent.location) {
+                          if (locInput.tagName === 'SELECT') {
+                              const search = intent.location.toLowerCase().trim();
+                              const options = Array.from(locInput.options);
+                              
+                              // Try multiple matching strategies
+                              const match = options.find(o => {
+                                  if (!o.value) return false;
+                                  const val = o.value.toLowerCase()
+                                      .replace('city of ', '')
+                                      .replace('municipality of ', '')
+                                      .trim();
+                                  return val === search || 
+                                        val.includes(search) || 
+                                        search.includes(val);
+                              });
+                              
+                              if (match) {
+                                  locInput.value = match.value;
+                                  if (typeof $ !== 'undefined') $(locInput).trigger('change');
+                              }
+                          } else {
+                              locInput.value = intent.location;
+                          }
+                        }
+
                         showToast(`🔍 Searching for <strong>${intent.blood_type || 'any'}</strong> donors in <strong>${intent.location || 'any location'}</strong>…`, 'success');
                         setTimeout(() => searchForm.submit(), 1000);
-                    } else {
-                        // Not on browse page — navigate there with params
-                        let url = "{% url 'browse_donors' %}?";
-                        if (intent.blood_type) url += `blood_type=${encodeURIComponent(intent.blood_type)}&`;
-                        if (intent.location)   url += `location=${encodeURIComponent(intent.location)}`;
-                        showToast(`🔍 Finding donors…`, 'success');
-                        setTimeout(() => window.location.href = url, 1000);
                     }
 
                 } else {
@@ -515,6 +540,9 @@
 
     })();
     </script>
+
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     </body> 
     </html>

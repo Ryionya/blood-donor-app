@@ -49,6 +49,14 @@ def browse_donors_view(request):
         except Exception:
             pass
 
+    # Load Philippine cities for dropdown
+    try:
+        cities_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'ph_cities.json')
+        with open(cities_path, 'r') as f:
+            ph_cities = json_module.load(f).get('cities', [])
+    except Exception:
+        ph_cities = []
+
     blood_type_choices = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
     return render(request, 'recipients/browse.html', {
@@ -56,10 +64,10 @@ def browse_donors_view(request):
         'blood_type_choices': blood_type_choices,
         'selected_blood_type': blood_type,
         'selected_location': location,
+        'ph_cities': ph_cities,
         'ai_recommendation': ai_recommendation,
     })
-
-
+ 
 # ─────────────────────────────────────────────
 #  LOCATION LIST — JSON endpoint for voice parser
 # ─────────────────────────────────────────────

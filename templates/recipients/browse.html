@@ -37,41 +37,20 @@
         </select>
       </div>
 
-      <!-- Location + mic button -->
+      <!-- Location -->
       <div class="col-md-6">
-        <label class="form-label fw-semibold">Location</label>
-        <div class="input-group">
-          <input
-            type="text"
-            name="location"
-            id="location-input"
-            class="form-control"
-            placeholder="e.g. Santa Rosa, Calamba…"
-            value="{{ selected_location }}"
-            autocomplete="off"
-          >
-          <button
-            class="btn btn-outline-danger position-relative"
-            type="button"
-            id="voice-btn"
-            title="Search by voice"
-          >
-            <span id="voice-icon">🎤</span>
-            <!-- Pulse ring — shown only while listening -->
-            <span
-              id="voice-pulse"
-              class="position-absolute top-50 start-50 translate-middle rounded-circle d-none"
-              style="
-                width: 100%; height: 100%;
-                border: 2px solid #dc3545;
-                animation: pulse-ring 1s ease-out infinite;
-                pointer-events: none;
-              "
-            ></span>
-          </button>
-        </div>
-        <!-- Status line below the input -->
-        <div id="voice-status" class="form-text fw-semibold d-none"></div>
+          <label class="form-label fw-semibold">Location</label>
+          <select name="location" 
+                  id="location-input"
+                  class="form-select select2-city"
+                  data-placeholder="Search city or municipality...">
+              <option value="">All Locations</option>
+              {% for city in ph_cities %}
+                  <option value="{{ city }}" {% if selected_location == city %}selected{% endif %}>
+                      {{ city }}
+                  </option>
+              {% endfor %}
+          </select>
       </div>
 
       <!-- Search + Clear -->
@@ -363,5 +342,16 @@
   };
 
 })();
+</script>
+
+<script>
+$(document).ready(function() {
+    $('.select2-city').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Search city or municipality...',
+        allowClear: true,
+        width: '100%',
+    });
+});
 </script>
 {% endblock %}

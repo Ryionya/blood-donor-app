@@ -53,7 +53,12 @@ Available navigation pages:
 {pages_description}
 
 Blood types: A+, A-, B+, B-, AB+, AB-, O+, O-
-Filipino blood type words: positibo/posi = positive/+, negatibo/nega = negative/-
+Rules for blood type extraction:
+- ALWAYS include the letter (A, B, AB, O) AND the sign (+/-)
+- "a positive" = A+, "b negative" = B-, "o positive" = O+, "ab positive" = AB+
+- Filipino: "a positibo" = A+, "b negatibo" = B-, "o positibo" = O+
+- NEVER return just "positive" or "negative" without the blood type letter
+- If only sign is mentioned without letter, return empty blood_type
 
 Return ONLY a valid JSON object in one of these formats:
 

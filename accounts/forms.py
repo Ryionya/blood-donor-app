@@ -1,8 +1,24 @@
+import json
+import os
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import User
 from donors.models import DonorProfile
+from django.conf import settings
 
+
+def get_city_choices():
+    try:
+        cities_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'ph_cities.json')
+        with open(cities_path, 'r') as f:
+            data = json.load(f)
+        cities = data.get('cities', [])
+        choices = [('', '-- Select your city --')]
+        choices += [(city, city) for city in cities]
+        return choices
+    except Exception:
+        return [('', '-- Select your city --')]
+    
 class RegisterForm(UserCreationForm):
     ROLE_CHOICES = [
         ('donor', 'I want to be a Donor'),
@@ -35,6 +51,15 @@ class RegisterForm(UserCreationForm):
 
 
 class ProfileSetupForm(forms.ModelForm):
+    location = forms.ChoiceField(
+        choices=get_city_choices,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select select2-city',
+            'data-placeholder': 'Search your city...',
+        })
+    )
+
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'phone_number', 'location', 'profile_picture']

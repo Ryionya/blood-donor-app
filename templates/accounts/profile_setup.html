@@ -54,11 +54,15 @@
                     {% if field.html_name != 'profile_picture' %}
                     <div class="mb-3">
                         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        <input type="text"
-                            name="{{ field.html_name }}"
-                            id="{{ field.id_for_label }}"
-                            class="form-control {% if field.errors %}is-invalid{% endif %}"
-                            {% if field.value %}value="{{ field.value }}"{% endif %}>
+                        {% if field.field.widget.input_type == 'select' %}
+                            {{ field }}
+                        {% else %}
+                            <input type="{{ field.field.widget.input_type }}"
+                                name="{{ field.html_name }}"
+                                id="{{ field.id_for_label }}"
+                                class="form-control {% if field.errors %}is-invalid{% endif %}"
+                                {% if field.value %}value="{{ field.value }}"{% endif %}>
+                        {% endif %}
                         {% for error in field.errors %}
                             <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
@@ -157,4 +161,16 @@
         });
     }
 </script>
+
+<script>
+$(document).ready(function() {
+    $('.select2-city').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Search your city or municipality...',
+        allowClear: true,
+        width: '100%',
+    });
+});
+</script>
+
 {% endblock %}
