@@ -97,43 +97,44 @@
     </div>
 
     <!-- LOWER CARDS -->
-    <div class="row g-3">
-        <div class="col-md-6">
-            <a href="{% url 'admin_application_queue' %}" class="text-decoration-none">
-                <div class="dashboard-card quick-card">
-                    <h6>Review queue</h6>
-                    <p>{{ pending_count }} pending applications</p>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-md-6">
-            <a href="{% url 'admin_manage_users' %}" class="text-decoration-none">
-                <div class="dashboard-card quick-card">
-                    <h6>Manage users</h6>
-                    <p>View all accounts</p>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-md-6">
-            <a href="{% url 'admin_donor_list' %}" class="text-decoration-none">
-                <div class="dashboard-card quick-card">
-                    <h6>Donor list</h6>
-                    <p>{{ approved_count }} Approved donors</p>
-                </div>
-            </a>
-        </div>
-
-        <div class="col-md-6">
-            <a href="{% url 'admin_stats' %}" class="text-decoration-none">
-                <div class="dashboard-card quick-card">
-                    <h6>Stats</h6>
-                    <p>Requests & donations</p>
-                </div>
-            </a>
-        </div>
+     <div class="row g-3">
+    <div class="col-md-6">
+        <a href="{% url 'admin_application_queue' %}" class="text-decoration-none">
+            <div class="dashboard-card quick-card">
+                <h6>Applications Queue</h6>
+                <p>{{ pending_count }} pending applications</p>
+            </div>
+        </a>
     </div>
+
+    <div class="col-md-6">
+        <a href="{% url 'admin_request_queue' %}" class="text-decoration-none">
+            <div class="dashboard-card quick-card">
+                <h6>Blood Request Queue</h6>
+                <p>{{ pending_requests_count }} pending requests</p>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6">
+        <a href="{% url 'admin_user_list' %}" class="text-decoration-none">
+            <div class="dashboard-card quick-card">
+                <h6>Manage users</h6>
+                <p>View all accounts</p>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6">
+        <a href="{% url 'admin_donor_list' %}" class="text-decoration-none">
+            <div class="dashboard-card quick-card">
+                <h6>Donor list</h6>
+                <p>View all approved donors</p>
+            </div>
+        </a>
+    </div>
+</div>
+  
 
   <style>
     /* ===== LIGHT THEME DASHBOARD ===== */

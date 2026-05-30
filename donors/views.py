@@ -12,6 +12,8 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 from .models import Notification
 from .utils import send_notification
+from recipients.models import BloodRequest
+from accounts.models import User
 
 @login_required
 def apply_donor(request):
@@ -133,7 +135,6 @@ def admin_review_application(request, pk):
 @login_required
 @admin_required
 def admin_dashboard(request):
-
     recent_pending = DonorApplication.objects.filter(
         status=DonorApplication.STATUS_PENDING
     ).order_by("-submitted_at")[:3]
@@ -141,9 +142,10 @@ def admin_dashboard(request):
     context = {
         "pending_count": DonorApplication.objects.filter(status=DonorApplication.STATUS_PENDING).count(),
         "approved_count": DonorApplication.objects.filter(status=DonorApplication.STATUS_APPROVED).count(),
-        "rejected_count": DonorApplication.objects.filter(status = DonorApplication.STATUS_REJECTED).count(),
-        "total_users": User.objects.count(),
+        "rejected_count": DonorApplication.objects.filter(status=DonorApplication.STATUS_REJECTED).count(),
+        "total_users": User.objects.filter(role__in=['donor', 'recipient']).count(),
         "recent_pending": recent_pending,
+        "pending_requests_count": BloodRequest.objects.filter(status='pending_admin').count(),
     }
 
     return render(request, "admin/dashboard.html", context)
@@ -287,3 +289,108 @@ def admin_stats(request):
         'total_donations': DonationLog.objects.count(),
     }
     return render(request, 'admin/stats.html', context)
+
+@login_required
+@admin_required
+def admin_request_queue(request):
+    requests = BloodRequest.objects.filter(
+        status='pending_admin'
+    ).select_related('recipient', 'donor').order_by('created_at')
+
+    return render(request, 'admin/request_queue.html', {
+        'requests': requests,
+        'count': requests.count(),
+    })
+
+@login_required
+@admin_required
+def admin_review_request(request, pk):
+    blood_request = get_object_or_404(BloodRequest, pk=pk)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        note = request.POST.get('admin_note', '').strip()
+
+        if action == 'approve':
+            blood_request.status = 'pending'
+            blood_request.admin_notes = note
+            blood_request.save()
+
+            # Notify donor
+            send_notification(
+                user=blood_request.donor,
+                notif_type='request',
+                message=f'{blood_request.recipient.get_full_name() or blood_request.recipient.username} sent you a blood donation request for {blood_request.hospital_name}.',
+            )
+
+            # Push notification to donor
+            try:
+                from webpush import send_user_notification
+                payload = {
+                    'head': '🩸 New Blood Request',
+                    'body': f'{blood_request.recipient.get_full_name() or blood_request.recipient.username} needs your help at {blood_request.hospital_name}.',
+                    'icon': '/static/images/icon-192.png',
+                    'url': '/incoming-requests/',
+                }
+                send_user_notification(user=blood_request.donor, payload=payload, ttl=1000)
+            except Exception:
+                pass
+
+            # Notify recipient
+            send_notification(
+                user=blood_request.recipient,
+                notif_type='request_approved',
+                message=f'Your blood request to {blood_request.donor.username} has been verified and forwarded to the donor.',
+            )
+
+            messages.success(request, 'Request approved and forwarded to donor.')
+
+        elif action == 'reject':
+            if not note:
+                messages.error(request, 'Please provide a rejection reason.')
+                return redirect('admin_review_request', pk=pk)
+
+            blood_request.status = 'rejected_by_admin'
+            blood_request.admin_notes = note
+            blood_request.save()
+
+            send_notification(
+                user=blood_request.recipient,
+                notif_type='request_rejected',
+                message=f'Your blood request was not approved by admin. Reason: {note}',
+            )
+
+            messages.warning(request, 'Request rejected.')
+
+        return redirect('admin_request_queue')
+
+    return render(request, 'admin/review_request.html', {
+        'blood_request': blood_request,
+    })
+
+@login_required
+@admin_required
+def admin_user_list(request):
+    users = User.objects.exclude(role='admin').order_by('role', 'username')
+    return render(request, 'admin/user_list.html', {
+        'users': users,
+        'total_donors': User.objects.filter(role='donor').count(),
+        'total_recipients': User.objects.filter(role='recipient').count(),
+    })
+
+@login_required
+@admin_required
+def admin_user_profile(request, pk):
+    profile_user = get_object_or_404(User, pk=pk)
+    donor_profile = getattr(profile_user, 'donor_profile', None)
+    recipient_profile = getattr(profile_user, 'recipient_profile', None)
+    applications = DonorApplication.objects.filter(donor=profile_user).order_by('-submitted_at')
+    requests = BloodRequest.objects.filter(recipient=profile_user).order_by('-created_at')
+
+    return render(request, 'admin/user_profile.html', {
+        'profile_user': profile_user,
+        'donor_profile': donor_profile,
+        'recipient_profile': recipient_profile,
+        'applications': applications,
+        'requests': requests,
+    })

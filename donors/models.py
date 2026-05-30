@@ -72,6 +72,8 @@ class Notification(models.Model):
         ('rejected', 'Application Rejected'),
         ('request',  'Donation Request'),
         ('accepted', 'Request Accepted'),
+        ('request_approved', 'Request Approved by Admin'),
+        ('request_rejected', 'Request Rejected by Admin'),
     ]
     user       = models.ForeignKey(
                      settings.AUTH_USER_MODEL,

@@ -1,10 +1,15 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4" style="max-width:700px">
-  <a href="{% url 'admin_application_queue' %}" class="btn btn-outline-secondary btn-sm">
-    ← Back to Queue
-  </a>
-  <h2 class="mt-2">Review Application</h2>
+  {% if request.META.HTTP_REFERER and 'users' in request.META.HTTP_REFERER %}
+      <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-outline-secondary btn-sm">
+          ← Back to User Profile
+      </a>
+  {% else %}
+      <a href="{% url 'admin_application_queue' %}" class="btn btn-outline-secondary btn-sm">
+          ← Back to Queue
+      </a>
+  {% endif %}
 
   {% if messages %}
     {% for msg in messages %}
@@ -132,6 +137,7 @@
   <form method="POST" class="mt-4">
     {% csrf_token %}
 
+    {% if application.status == 'pending' %}
     <!-- Flag User -->
     <div class="card border-warning mb-3">
       <div class="card-body py-2 px-3">
@@ -175,14 +181,22 @@
       <textarea name="admin_note" id="adminNote" class="form-control" rows="3"
         placeholder="Add notes or rejection reason..."></textarea>
     </div>
+    {% endif %}
 
     <div class="d-flex gap-2">
-      <button type="submit" name="action" value="approve" class="btn btn-success">
-        <i class="fa-solid fa-check me-1"></i> Approve
-      </button>
-      <button type="submit" name="action" value="reject" class="btn btn-danger">
-        <i class="fa-solid fa-x me-1"></i> Reject
-      </button>
+        {% if application.status == 'pending' %}
+            <button type="submit" name="action" value="approve" class="btn btn-success">
+                <i class="fa-solid fa-check me-1"></i> Approve
+            </button>
+            <button type="submit" name="action" value="reject" class="btn btn-danger">
+                <i class="fa-solid fa-x me-1"></i> Reject
+            </button>
+        {% else %}
+            <div class="alert alert-{% if application.status == 'approved' %}success{% else %}danger{% endif %} mb-0 w-100">
+                This application has already been 
+                <strong>{{ application.get_status_display }}</strong>.
+            </div>
+        {% endif %}
     </div>
   </form>
 </div>

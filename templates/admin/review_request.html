@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4" style="max-width:700px">
+    <a href="{% url 'admin_request_queue' %}" class="btn btn-outline-secondary btn-sm">
+        ← Back to Queue
+    </a>
+    <h2 class="mt-2">Review Blood Request</h2>
+
+    {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Recipient Info -->
+    <div class="card mt-3">
+        <div class="card-body">
+            <h6 class="fw-bold text-uppercase text-muted mb-3">
+                <i class="fa-solid fa-user me-2 text-danger"></i>Recipient
+            </h6>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <img src="{% if blood_request.recipient.profile_picture %}{{ blood_request.recipient.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ blood_request.recipient.username }}&background=C0392B&color=fff&size=128{% endif %}"
+                    class="rounded-circle border border-2 border-danger"
+                    style="width:60px; height:60px; object-fit:cover;">
+                <div>
+                    <h6 class="mb-0 fw-bold">{{ blood_request.recipient.get_full_name|default:blood_request.recipient.username }}</h6>
+                    <small class="text-muted">@{{ blood_request.recipient.username }} · {{ blood_request.recipient.email }}</small>
+                </div>
+            </div>
+            <p><strong>Phone:</strong> {{ blood_request.recipient.phone_number|default:"Not provided" }}</p>
+            <p><strong>Location:</strong> {{ blood_request.recipient.location|default:"Not provided" }}</p>
+            <p><strong>Blood Type:</strong> {{ blood_request.recipient.recipient_profile.blood_type|default:"Not provided" }}</p>
+            <!-- Recipient Government ID -->
+            <p class="fw-semibold mb-1">Government ID</p>
+            {% if blood_request.recipient.recipient_profile.government_id %}
+                {% with name=blood_request.recipient.recipient_profile.government_id.name %}
+                    <a href="{{ blood_request.recipient.recipient_profile.government_id.url }}" target="_blank" style="text-decoration:none;">
+                        {% if '.pdf' in name %}
+                            <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                                <span style="font-size:48px;">📄</span>
+                                <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
+                            </div>
+                        {% else %}
+                            <img src="{{ blood_request.recipient.recipient_profile.government_id.url }}"
+                                class="img-fluid rounded border"
+                                style="max-height:200px; object-fit:contain; width:100%; cursor:pointer;">
+                        {% endif %}
+                    </a>
+                {% endwith %}
+            {% else %}
+                <p class="text-muted">Not uploaded</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Donor Info -->
+    <div class="card mt-3">
+        <div class="card-body">
+            <h6 class="fw-bold text-uppercase text-muted mb-3">
+                <i class="fa-solid fa-heart-pulse me-2 text-danger"></i>Donor
+            </h6>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <img src="{% if blood_request.donor.profile_picture %}{{ blood_request.donor.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ blood_request.donor.username }}&background=C0392B&color=fff&size=128{% endif %}"
+                    class="rounded-circle border border-2 border-danger"
+                    style="width:60px; height:60px; object-fit:cover;">
+                <div>
+                    <h6 class="mb-0 fw-bold">{{ blood_request.donor.get_full_name|default:blood_request.donor.username }}</h6>
+                    <small class="text-muted">@{{ blood_request.donor.username }} · {{ blood_request.donor.email }}</small>
+                </div>
+            </div>
+            <p><strong>Phone:</strong> {{ blood_request.donor.phone_number|default:"Not provided" }}</p>
+            <p><strong>Location:</strong> {{ blood_request.donor.location|default:"Not provided" }}</p>
+            <p class="mt-2"><strong>Blood Type:</strong> {{ blood_request.donor.donor_profile.blood_type|default:"Not provided"  }}</p>
+            <!-- Donor Government ID -->
+            <p class="fw-semibold mb-1">Government ID</p>
+            {% if blood_request.recipient.recipient_profile.government_id %}
+                {% with name=blood_request.recipient.recipient_profile.government_id.name %}
+                    <a href="{{ blood_request.recipient.recipient_profile.government_id.url }}" target="_blank" style="text-decoration:none;">
+                        {% if '.pdf' in name %}
+                            <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                                <span style="font-size:48px;">📄</span>
+                                <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
+                            </div>
+                        {% else %}
+                            <img src="{{ blood_request.recipient.recipient_profile.government_id.url }}"
+                                class="img-fluid rounded border"
+                                style="max-height:200px; object-fit:contain; width:100%; cursor:pointer;">
+                        {% endif %}
+                    </a>
+                {% endwith %}
+            {% else %}
+                <p class="text-muted">Not uploaded</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Request Details -->
+    <div class="card mt-3">
+        <div class="card-body">
+            <h6 class="fw-bold text-uppercase text-muted mb-3">
+                <i class="fa-solid fa-file-medical me-2 text-danger"></i>Request Details
+            </h6>
+            <p><strong>Hospital:</strong> {{ blood_request.hospital_name }}</p>
+            <p><strong>Urgency:</strong>
+                {% if blood_request.urgency == 'critical' %}
+                    <span class="badge bg-danger">🔴 Critical</span>
+                {% elif blood_request.urgency == 'high' %}
+                    <span class="badge bg-warning text-dark" style="background:#fd7e14!important;">🟠 High</span>
+                {% elif blood_request.urgency == 'medium' %}
+                    <span class="badge bg-warning text-dark">🟡 Medium</span>
+                {% else %}
+                    <span class="badge bg-success">🟢 Low</span>
+                {% endif %}
+            </p>
+            <p><strong>Message:</strong> {{ blood_request.message }}</p>
+            <p><strong>Submitted:</strong> {{ blood_request.created_at|date:"M d, Y" }}</p>
+
+            <!-- Medical Certificate -->
+            <p class="fw-semibold mb-1">Medical Certificate</p>
+            {% if blood_request.medical_certificate %}
+                {% with name=blood_request.medical_certificate.name %}
+                    <a href="{{ blood_request.medical_certificate.url }}" target="_blank" style="text-decoration:none;">
+                        {% if '.pdf' in name %}
+                            <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                                <span style="font-size:48px;">📄</span>
+                                <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
+                            </div>
+                        {% else %}
+                            <img src="{{ blood_request.medical_certificate.url }}"
+                                class="img-fluid rounded border"
+                                style="max-height:200px; object-fit:contain; width:100%; cursor:pointer;">
+                        {% endif %}
+                    </a>
+                {% endwith %}
+            {% else %}
+                <p class="text-muted">Not uploaded</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Review Form -->
+    <form method="POST" class="mt-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label fw-bold">Admin Notes / Rejection Reason</label>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm template-btn"
+                    data-text="The medical certificate is unclear or unreadable. Please resubmit.">
+                    🔍 Unclear medical cert
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm template-btn"
+                    data-text="The Government ID does not match the registered account details.">
+                    🪪 ID mismatch
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm template-btn"
+                    data-text="The medical certificate does not confirm the need for blood transfusion.">
+                    ❌ Invalid medical cert
+                </button>
+            </div>
+            <textarea name="admin_note" id="adminNote" class="form-control" rows="3"
+                placeholder="Add notes or rejection reason..."></textarea>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" name="action" value="approve" class="btn btn-success">
+                <i class="fa-solid fa-check me-1"></i> Approve & Forward to Donor
+            </button>
+            <button type="submit" name="action" value="reject" class="btn btn-danger">
+                <i class="fa-solid fa-x me-1"></i> Reject
+            </button>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('.template-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('adminNote').value = this.dataset.text;
+        });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

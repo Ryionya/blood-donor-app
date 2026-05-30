@@ -95,7 +95,7 @@ def donor_profile_view(request, donor_id):
     existing_request = BloodRequest.objects.filter(
         recipient=request.user,
         donor=donor.user,
-        status='pending',
+        status__in=['pending_admin', 'pending'],
     ).first()
 
     accepted_request = BloodRequest.objects.filter(
@@ -121,10 +121,14 @@ def send_request_view(request, donor_id):
         DonorProfile, pk=donor_id, is_verified=True, is_available=True,
     )
 
-    # Prevent donors from requesting themselves
     if request.user == donor.user:
         messages.error(request, 'You cannot send a request to yourself.')
         return redirect('browse_donors')
+
+    # Check if recipient has uploaded a government ID
+    if not request.user.recipient_profile.government_id:
+        messages.error(request, 'You must upload a Government ID in your profile before sending a blood request.')
+        return redirect('profile_setup')
 
     existing = BloodRequest.objects.filter(
         recipient=request.user,
@@ -140,20 +144,23 @@ def send_request_view(request, donor_id):
         hospital_name = request.POST.get('hospital_name', '').strip()
         urgency       = request.POST.get('urgency', 'medium')
         message       = request.POST.get('message', '').strip()
+        medical_cert  = request.FILES.get('medical_certificate')
 
         if not hospital_name or not message:
             messages.error(request, 'Please fill in all fields.')
+        elif not medical_cert:
+            messages.error(request, 'Please attach a medical certificate.')
         else:
-            BloodRequest.objects.create(
+            blood_request = BloodRequest.objects.create(
                 recipient=request.user,
                 donor=donor.user,
                 hospital_name=hospital_name,
                 urgency=urgency,
                 message=message,
-                status='pending',
+                medical_certificate=medical_cert,
+                status='pending_admin',
             )
 
-            # Push notification to donor
             try:
                 payload = {
                     'head': '🩸 New Blood Request',
@@ -165,14 +172,13 @@ def send_request_view(request, donor_id):
             except Exception:
                 pass
 
-            # In-app notification for donor
             Notification.objects.create(
                 user=donor.user,
                 notif_type='request',
                 message=f'{request.user.get_full_name() or request.user.username} sent you a blood donation request for {hospital_name}.',
             )
 
-            messages.success(request, f'Request sent to {donor.user.get_full_name() or donor.user.username} successfully!')
+            messages.success(request, 'Request sent successfully!')
             return redirect('my_requests')
 
     urgency_choices = [

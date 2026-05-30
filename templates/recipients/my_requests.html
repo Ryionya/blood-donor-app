@@ -18,11 +18,12 @@
   <div class="d-flex flex-column gap-3">
   {% for req in blood_requests %}
 
-    <div class="card shadow-sm border-0
-      {% if req.status == 'accepted' %}border-start border-4 border-success
-      {% elif req.status == 'declined' %}border-start border-4 border-secondary opacity-75
-      {% else %}border-start border-4 border-warning{% endif %}
-    ">
+      <div class="card shadow-sm border-0
+        {% if req.status == 'accepted' %}border-start border-4 border-success
+        {% elif req.status == 'declined' or req.status == 'rejected_by_admin' %}border-start border-4 border-danger opacity-75
+        {% elif req.status == 'pending_admin' %}border-start border-4 border-secondary
+        {% else %}border-start border-4 border-warning{% endif %}
+      ">
       <div class="card-body">
 
         <div class="row align-items-start">
@@ -64,18 +65,41 @@
           <!-- Right: status + contact reveal -->
           <div class="col-md-4 text-md-end mt-2 mt-md-0">
 
-            {% if req.status == 'pending' %}
-              <span class="badge bg-warning text-dark fs-6">⏳ Pending</span>
-              <p class="text-muted small mt-1 mb-0">Waiting for donor response…</p>
+          {% if req.status == 'pending_admin' %}
+            <span class="badge bg-secondary fs-6">🔍 Under Review</span>
+            <p class="text-muted small mt-1 mb-0">Your request is being reviewed by admin before being sent to the donor.</p>
 
-            {% elif req.status == 'accepted' %}
-              <span class="badge bg-success fs-6">✅ Accepted</span>
+          {% elif req.status == 'pending' %}
+            <span class="badge bg-warning text-dark fs-6">⏳ Pending</span>
+            <p class="text-muted small mt-1 mb-0">Waiting for donor response…</p>
+
+          {% elif req.status == 'accepted' %}
+            <span class="badge bg-success fs-6">✅ Accepted</span>
+            <div class="mt-2 p-2 bg-light rounded small text-start">
+              <p class="mb-1 fw-semibold">📞 Donor Contact</p>
+              <p class="mb-0">{{ req.donor.phone_number|default:"Not provided" }}</p>
+              <p class="mb-0 text-muted">📍 {{ req.donor.location|default:"Not provided" }}</p>
+              <p class="mb-0 text-muted">Coordinate directly with the donor.</p>
+            </div>
+
+          {% elif req.status == 'declined' %}
+            <span class="badge bg-secondary fs-6">❌ Declined</span>
+            <p class="text-muted small mt-1 mb-0">This donor could not help this time.</p>
+            <a href="{% url 'browse_donors' %}" class="btn btn-sm btn-outline-danger mt-2">
+              Find Another Donor
+            </a>
+
+          {% elif req.status == 'rejected_by_admin' %}
+            <span class="badge bg-danger fs-6">🚫 Rejected</span>
+            {% if req.admin_notes %}
               <div class="mt-2 p-2 bg-light rounded small text-start">
-                <p class="mb-1 fw-semibold">📞 Donor Contact</p>
-                <p class="mb-0">{{ req.donor.phone_number|default:"Not provided" }}</p>
-                <p class="mb-0 text-muted">📍 {{ req.donor.location|default:"Not provided" }}</p>
-                <p class="mb-0 text-muted">Coordinate directly with the donor.</p>
+                <p class="mb-1 fw-semibold">Reason:</p>
+                <p class="mb-0 text-muted">{{ req.admin_notes }}</p>
               </div>
+            {% endif %}
+            <a href="{% url 'browse_donors' %}" class="btn btn-sm btn-outline-danger mt-2">
+              Resubmit Request
+            </a>
 
             {% elif req.status == 'declined' %}
               <span class="badge bg-secondary fs-6">❌ Declined</span>

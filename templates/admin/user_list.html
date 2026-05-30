@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4"><div class="container py-4">
+  <div class="mb-4">
+    <a
+      href="{% url 'admin_dashboard' %}"
+      class="btn btn-outline-secondary btn-sm"
+    >
+      ← Back to Dashboard
+    </a>
+  </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>User Management</h3>
+    <div>
+        <span class="badge bg-danger fs-8">{{ total_donors }} Donors</span>
+        <span class="badge bg-primary">{{ total_recipients }} Recipients</span>
+        <span class="badge bg-success">{{ total_donors|add:total_recipients }} Total</span>
+    </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th>Joined</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <img src="{% if u.profile_picture %}{{ u.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ u.username }}&background=C0392B&color=fff&size=128{% endif %}"
+                                class="rounded-circle"
+                                style="width:36px; height:36px; object-fit:cover;">
+                            <div>
+                                <strong>{{ u.username }}</strong>
+                                {% if u.is_flagged %}
+                                    <span class="badge bg-warning text-dark ms-1">Flagged</span>
+                                {% endif %}
+                                <br><small class="text-muted">{{ u.get_full_name }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if u.role == 'donor' %}
+                            <span class="badge bg-danger">Donor</span>
+                        {% else %}
+                            <span class="badge bg-primary">Recipient</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.date_joined|date:"M d, Y" }}</td>
+                    <td>
+                        <a href="{% url 'admin_user_profile' u.pk %}" class="btn btn-danger btn-sm">
+                            View Profile
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

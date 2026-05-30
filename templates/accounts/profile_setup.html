@@ -49,6 +49,37 @@
                     {% endif %}
                 {% endfor %}
 
+                {% if recipient_form %}
+                <hr>
+                <h6 class="fw-semibold text-uppercase text-muted mb-2">Recipient Info</h6>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Blood Type</label>
+                    <select name="blood_type" class="form-select">
+                        <option value="">-- Select Blood Type --</option>
+                        {% for value, label in recipient_form.fields.blood_type.choices %}
+                            <option value="{{ value }}" {% if recipient_form.initial.blood_type == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Government ID <span class="text-danger">*</span></label>
+                    {% if request.user.recipient_profile.government_id %}
+                        <div class="mb-2">
+                            <a href="{{ request.user.recipient_profile.government_id.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa-solid fa-file me-1"></i> View uploaded ID
+                            </a>
+                        </div>
+                    {% endif %}
+                    <input type="file" name="government_id" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
+                    <small class="text-muted">
+                        <i class="fa-solid fa-circle-info me-1"></i>
+                        Required to send blood requests. Accepted: JPG, PNG, PDF. Max 5MB.
+                    </small>
+                </div>
+                {% endif %}
+
                     {% if donor_form %}
                     <hr>
                     <h6 class="fw-semibold text-uppercase text-muted mb-2">Donor Info</h6>

@@ -17,14 +17,14 @@
         <h5 class="mb-0 fw-bold">🩸 Send Donation Request</h5>
         <p class="mb-0 small opacity-75">
           Requesting from
-          <strong>{{ donor.user.get_full_name|default:donor.user.username }}</strong>
+          <strong>{{ donor.user.username }}</strong>
           — Blood Type <span class="badge bg-white text-danger">{{ donor.blood_type }}</span>
           · 📍 {{ donor.location|default:"Location not set" }}
         </p>
       </div>
 
       <div class="card-body p-4">
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
           {% csrf_token %}
 
           <!-- Hospital name -->
@@ -41,7 +41,7 @@
             >
           </div>
 
-          <!-- Urgency level — radio button group -->
+          <!-- Urgency level -->
           <div class="mb-3">
             <label class="form-label fw-semibold">
               Urgency Level <span class="text-danger">*</span>
@@ -74,7 +74,7 @@
           </div>
 
           <!-- Message -->
-          <div class="mb-4">
+          <div class="mb-3">
             <label class="form-label fw-semibold">
               Message to Donor <span class="text-danger">*</span>
             </label>
@@ -86,6 +86,25 @@
               required
             ></textarea>
             <div class="form-text">This message will be visible to the donor when reviewing your request.</div>
+          </div>
+
+          <!-- Medical Certificate -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              Medical Certificate <span class="text-danger">*</span>
+            </label>
+            <input
+              type="file"
+              name="medical_certificate"
+              id="medical_certificate"
+              class="form-control"
+              accept=".jpg,.jpeg,.png,.pdf"
+              required
+            >
+            <small class="text-muted">
+              <i class="fa-solid fa-circle-info me-1"></i>
+              Attach a medical certificate confirming your need for blood transfusion. Accepted: JPG, PNG, PDF. Max 5MB.
+            </small>
           </div>
 
           <!-- Privacy note -->

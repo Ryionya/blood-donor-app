@@ -14,6 +14,10 @@ urlpatterns = [
     path('admin/manage-users/', views.admin_manage_users, name='admin_manage_users'),
     path('admin/donor-list/', views.admin_donor_list, name='admin_donor_list'),
     path('admin/stats/', views.admin_stats, name='admin_stats'),
+    path('admin-panel/requests/', views.admin_request_queue, name='admin_request_queue'),
+    path('admin-panel/requests/<int:pk>/', views.admin_review_request, name='admin_review_request'),
+    path('admin-panel/users/', views.admin_user_list, name='admin_user_list'),
+    path('admin-panel/users/<int:pk>/', views.admin_user_profile, name='admin_user_profile'),
 
     # Donation tracking
     path('log-donation/',                   views.log_donation_view,            name='log_donation'),

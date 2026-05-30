@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import User
 from donors.models import DonorProfile
+from recipients.models import RecipientProfile
 
 class RegisterForm(UserCreationForm):
     ROLE_CHOICES = [
@@ -26,3 +27,12 @@ class DonorProfileForm(forms.ModelForm):
     class Meta:
         model = DonorProfile
         fields = ['blood_type', 'bio']
+
+
+class RecipientProfileForm(forms.ModelForm):
+    class Meta:
+        model = RecipientProfile
+        fields = ['government_id', 'blood_type']
+        widgets = {
+            'government_id': forms.FileInput(attrs={'accept': '.jpg,.jpeg,.png,.pdf'}),
+        }

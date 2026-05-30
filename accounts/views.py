@@ -3,8 +3,9 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import RegisterForm, ProfileSetupForm, DonorProfileForm
+from .forms import RegisterForm, ProfileSetupForm, DonorProfileForm, RecipientProfileForm
 from donors.models import DonorProfile
+from recipients.models import RecipientProfile
 
 
 def home_view(request):
@@ -31,6 +32,8 @@ def register_view(request):
             # Auto-create DonorProfile if registering as donor
             if user.role == 'donor':
                 DonorProfile.objects.create(user=user)
+            elif user.role == 'recipient':
+                RecipientProfile.objects.create(user=user)
             login(request, user)
             messages.success(request, f'Welcome, {user.first_name or user.username}! Please complete your profile.')
             return redirect('profile_setup')
@@ -68,22 +71,55 @@ def login_view(request):
 @login_required
 def profile_setup_view(request):
     user = request.user
+
     donor_profile = getattr(user, 'donor_profile', None)
+    recipient_profile = getattr(user, 'recipient_profile', None)
+
     if request.method == 'POST':
-        profile_form = ProfileSetupForm(request.POST, request.FILES, instance=user)
-        donor_form = DonorProfileForm(request.POST, instance=donor_profile) if donor_profile else None
+        profile_form = ProfileSetupForm(
+            request.POST,
+            request.FILES,
+            instance=user
+        )
+
+        donor_form = DonorProfileForm(
+            request.POST,
+            instance=donor_profile
+        ) if donor_profile else None
+
+        recipient_form = RecipientProfileForm(
+            request.POST,
+            request.FILES,
+            instance=recipient_profile
+        ) if recipient_profile else None
+
         if profile_form.is_valid():
             profile_form.save()
+
             if donor_form and donor_form.is_valid():
                 donor_form.save()
+
+            if recipient_form and recipient_form.is_valid():
+                recipient_form.save()
+
             messages.success(request, 'Profile updated successfully!')
             return redirect('home')
+
     else:
         profile_form = ProfileSetupForm(instance=user)
-        donor_form = DonorProfileForm(instance=donor_profile) if donor_profile else None
+
+        donor_form = DonorProfileForm(
+            instance=donor_profile
+        ) if donor_profile else None
+
+        recipient_form = RecipientProfileForm(
+            instance=recipient_profile
+        ) if recipient_profile else None
+
     return render(request, 'accounts/profile_setup.html', {
         'profile_form': profile_form,
         'donor_form': donor_form,
+        'recipient_form': recipient_form,
     })
 
 

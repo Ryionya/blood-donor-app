@@ -1,7 +1,7 @@
 import os
 from groq import Groq
 
-client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+client = Groq(api_key=os.getenv('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'))
 
 # All navigable pages with their URL names and descriptions
 NAVIGATION_PAGES = {

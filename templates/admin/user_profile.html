@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block title %}{{ profile_user.username }} — Admin View{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width:700px">
+    <a href="{% url 'admin_user_list' %}" class="btn btn-outline-secondary btn-sm">
+        ← Back to Users
+    </a>
+
+    <h2 class="mt-2">User Profile</h2>
+
+    <!-- Profile Header -->
+    <div class="card mt-3 border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <a href="{% if profile_user.profile_picture %}{{ profile_user.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ profile_user.first_name|default:profile_user.username }}+{{ profile_user.last_name }}&background=C0392B&color=fff&size=128{% endif %}" target="_blank">
+                    <img src="{% if profile_user.profile_picture %}{{ profile_user.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ profile_user.first_name|default:profile_user.username }}+{{ profile_user.last_name }}&background=C0392B&color=fff&size=128{% endif %}"
+                        class="rounded-circle border border-3 border-danger"
+                        style="width:80px; height:80px; object-fit:cover; cursor:pointer;">
+                </a>
+                <div>
+                    <h5 class="mb-0 fw-bold">
+                        {{ profile_user.get_full_name|default:profile_user.username }}
+                        {% if profile_user.is_flagged %}
+                            <span class="badge bg-warning text-dark ms-1">Flagged</span>
+                        {% endif %}
+                    </h5>
+                    <small class="text-muted">@{{ profile_user.username }}</small><br>
+                    <span class="badge {% if profile_user.role == 'donor' %}bg-danger{% else %}bg-primary{% endif %} mt-1">
+                        {{ profile_user.role|capfirst }}
+                    </span>
+                </div>
+            </div>
+            <small class="text-muted d-block mb-3" style="font-size:11px;">
+                <i class="fa-solid fa-up-right-from-square me-1"></i>Click photo to view full size
+            </small>
+            <hr class="my-2">
+
+            <h6 class="fw-semibold text-uppercase text-muted mb-2">Basic Info</h6>
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">First Name</label>
+                    <input type="text" class="form-control" value="{{ profile_user.first_name|default:'—' }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Last Name</label>
+                    <input type="text" class="form-control" value="{{ profile_user.last_name|default:'—' }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Email</label>
+                    <input type="text" class="form-control" value="{{ profile_user.email|default:'—' }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Phone Number</label>
+                    <input type="text" class="form-control" value="{{ profile_user.phone_number|default:'—' }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Location</label>
+                    <input type="text" class="form-control" value="{{ profile_user.location|default:'—' }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Date Joined</label>
+                    <input type="text" class="form-control" value="{{ profile_user.date_joined|date:'M d, Y' }}" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipient Info -->
+    {% if recipient_profile %}
+    <div class="card mt-3 border-0 shadow-sm">
+        <div class="card-body">
+            <h6 class="fw-semibold text-uppercase text-muted mb-3">
+                <i class="fa-solid fa-user me-2 text-danger"></i>Recipient Info
+            </h6>
+            <div class="col-md-6">
+                <label class="form-label text-muted small">Blood Type</label>
+                <input type="text" class="form-control" value="{{ recipient_profile.blood_type }}" readonly>
+            </div>
+            <label class="form-label text-muted small">Government ID</label>
+            {% if recipient_profile.government_id %}
+                {% with name=recipient_profile.government_id.name %}
+                    <a href="{{ recipient_profile.government_id.url }}" target="_blank" style="text-decoration:none;">
+                        {% if '.pdf' in name %}
+                            <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                                <span style="font-size:48px;">📄</span>
+                                <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
+                                <small class="text-muted">{{ name }}</small>
+                            </div>
+                        {% else %}
+                            <img src="{{ recipient_profile.government_id.url }}"
+                                class="img-fluid rounded border"
+                                style="max-height:200px; object-fit:contain; width:100%; cursor:pointer;">
+                        {% endif %}
+                    </a>
+                {% endwith %}
+            {% else %}
+                <p class="text-muted">Not uploaded</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Blood Requests -->
+    {% if requests %}
+    <div class="card mt-3 border-0 shadow-sm">
+        <div class="card-body">
+            <h6 class="fw-semibold text-uppercase text-muted mb-3">Blood Requests</h6>
+            {% for req in requests %}
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                    <strong>{{ req.hospital_name }}</strong>
+                    <br><small class="text-muted">To: {{ req.donor.username }} · {{ req.created_at|date:"M d, Y" }}</small>
+                </div>
+                <span class="badge
+                    {% if req.status == 'accepted' %}bg-success
+                    {% elif req.status == 'declined' or req.status == 'rejected_by_admin' %}bg-danger
+                    {% elif req.status == 'pending' %}bg-warning text-dark
+                    {% else %}bg-secondary{% endif %}">
+                    {{ req.get_status_display }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Donor Info -->
+    {% if donor_profile %}
+    <div class="card mt-3 border-0 shadow-sm">
+        <div class="card-body">
+            <h6 class="fw-semibold text-uppercase text-muted mb-3">
+                <i class="fa-solid fa-heart-pulse me-2 text-danger"></i>Donor Info
+            </h6>
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Blood Type</label>
+                    <input type="text" class="form-control" value="{{ donor_profile.blood_type }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Verified</label>
+                    <input type="text" class="form-control"
+                        value="{% if donor_profile.is_verified %}✅ Verified{% else %}Not Verified{% endif %}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small">Availability</label>
+                    <input type="text" class="form-control"
+                        value="{% if donor_profile.is_available %}Available{% else %}Unavailable{% endif %}" readonly>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label text-muted small">Bio</label>
+                    <textarea class="form-control" rows="2" readonly>{{ donor_profile.bio|default:'No bio provided' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Applications -->
+    {% if applications %}
+    <div class="card mt-3 border-0 shadow-sm">
+        <div class="card-body">
+            <h6 class="fw-semibold text-uppercase text-muted mb-3">Donor Applications</h6>
+            {% for app in applications %}
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                    <strong>{{ app.submitted_at|date:"M d, Y" }}</strong>
+                    <br><small class="text-muted">{{ app.get_status_display }}</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge
+                        {% if app.status == 'approved' %}bg-success
+                        {% elif app.status == 'rejected' %}bg-danger
+                        {% else %}bg-warning text-dark{% endif %}">
+                        {{ app.get_status_display }}
+                    </span>
+                    <a href="{% url 'review_application' app.pk %}" class="btn btn-outline-secondary btn-sm">
+                        View
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+</div>
+{% endblock %}
