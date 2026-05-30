@@ -19,7 +19,7 @@ class RegisterForm(UserCreationForm):
 class ProfileSetupForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'phone_number', 'location']
+        fields = ['first_name', 'last_name', 'phone_number', 'location', 'profile_picture']
 
 
 class DonorProfileForm(forms.ModelForm):

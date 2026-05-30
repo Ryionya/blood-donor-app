@@ -3,23 +3,40 @@
   <h2>Donor Application</h2>
   <p class="text-muted">Fill out this form to apply as a verified donor.</p>
 
+  <!-- Review Profile Section -->
+  <div class="card border-0 bg-light rounded-3 p-3 mb-4">
+    <h6 class="fw-semibold text-muted text-uppercase mb-3">Review Profile</h6>
+    <div class="d-flex align-items-center gap-3">
+      <img
+        src="{% if request.user.profile_picture %}{{ request.user.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ request.user.first_name|default:request.user.username }}+{{ request.user.last_name }}&background=C0392B&color=fff&size=128{% endif %}"
+        class="rounded-circle border border-2 border-danger"
+        style="width: 60px; height: 60px; object-fit: cover"
+      />
+      <div>
+        <p class="mb-0 fw-semibold">
+          {{ request.user.get_full_name|default:request.user.username }}
+        </p>
+        <p class="mb-0 text-muted" style="font-size: 13px">
+          Blood Type:
+          <strong>{{ request.user.donor_profile.blood_type }}</strong>
+        </p>
+      </div>
+    </div>
+    <small class="text-muted mt-2 d-block">
+      <i class="fa-solid fa-circle-info me-1"></i>
+      Go to <a href="{% url 'profile_setup' %}">My Profile</a> to change your
+      profile picture or blood type.
+    </small>
+  </div>
+
   <form method="POST" enctype="multipart/form-data" id="applicationForm">
     {% csrf_token %}
 
-    <div class="mb-3">
-      <label>Blood Type</label>
-      <input
-        type="text"
-        class="form-control"
-        value="{{ request.user.donor_profile.blood_type }}"
-        readonly
-      />
-      <input
-        type="hidden"
-        name="blood_type"
-        value="{{ request.user.donor_profile.blood_type }}"
-      />
-    </div>
+    <input
+      type="hidden"
+      name="blood_type"
+      value="{{ request.user.donor_profile.blood_type }}"
+    />
 
     <div class="mb-3">
       <label>Government ID</label>
@@ -49,6 +66,14 @@
       <div class="valid-feedback">Looks good!</div>
     </div>
 
+    <div class="mb-3">
+      <small class="text-muted">
+        <i class="fa-solid fa-circle-info me-1"></i>
+        At least one of the uploaded documents must clearly show your blood type
+        for verification purposes.
+      </small>
+    </div>
+
     <div class="d-flex gap-2">
       <a href="javascript:history.back()" class="btn btn-secondary">Back</a>
       <button type="submit" class="btn btn-danger" id="submitBtn">
@@ -62,30 +87,25 @@
 <script>
   const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
   const allowedExtensions = [".jpg", ".jpeg", ".png", ".pdf"];
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  const maxSize = 5 * 1024 * 1024;
 
   function validateFile(input, errorId) {
     const file = input.files[0];
     const errorDiv = document.getElementById(errorId);
-
     if (!file) return false;
-
     const ext = "." + file.name.split(".").pop().toLowerCase();
-
     if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(ext)) {
       input.classList.add("is-invalid");
       input.classList.remove("is-valid");
       errorDiv.textContent = "Only JPG, PNG, or PDF files are allowed.";
       return false;
     }
-
     if (file.size > maxSize) {
       input.classList.add("is-invalid");
       input.classList.remove("is-valid");
       errorDiv.textContent = "File size must not exceed 5MB.";
       return false;
     }
-
     input.classList.remove("is-invalid");
     input.classList.add("is-valid");
     errorDiv.textContent = "";
@@ -116,7 +136,7 @@
         "medical_certificate_error",
       );
       if (!govValid || !medValid) {
-        e.preventDefault(); // stop form from submitting if invalid
+        e.preventDefault();
       }
     });
 </script>
