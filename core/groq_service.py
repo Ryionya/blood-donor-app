@@ -1,7 +1,13 @@
 import os
 from groq import Groq
 
-client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+def get_client():
+    api_key = os.getenv('GROQ_API_KEY')
+
+    if not api_key:
+        return None
+
+    return Groq(api_key=api_key)
 
 # All navigable pages with their URL names and descriptions
 NAVIGATION_PAGES = {
@@ -30,6 +36,10 @@ def parse_voice_intent(transcript, user_role, active_role):
     Returns a dict with 'type' and relevant data.
     """
 
+    client = get_client()
+    if not client:
+        return {'type': 'unknown'}
+    
     pages_description = '\n'.join(
         [f'- {name}: {desc}' for name, desc in NAVIGATION_PAGES.items()]
     )
@@ -100,6 +110,11 @@ def get_donor_recommendation(donors, blood_type_needed, location):
     Use Groq to recommend the best donor match from available donors.
     Returns a recommendation string.
     """
+    
+    client = get_client()
+    if not client:
+        return None
+    
     if not donors:
         return None
 
