@@ -6,77 +6,328 @@
 <div class="row justify-content-center">
   <div class="col-md-6 col-lg-5">
 
-    <a href="{% url 'browse_donors' %}" class="btn btn-sm btn-outline-secondary mb-3">
+    <a href="{% url 'browse_donors' %}" class="btn btn-sm btn-outline-secondary mb-3 no-print">
       ← Back to Search
     </a>
 
-    <div class="card shadow border-0">
+    <!-- DONOR CARD -->
+    <div id="donor-card" class="donor-card shadow-lg">
 
-      <!-- Header strip -->
-      <div class="card-header bg-danger text-white text-center py-4">
-        <div
-          class="rounded-circle bg-white text-danger d-inline-flex align-items-center justify-content-center mb-2"
-          style="width:72px;height:72px;font-size:2rem;font-weight:700;"
-        >
+      <!-- Card Header -->
+      <div class="donor-card-header">
+
+        <!-- BloodLink branding (top left) -->
+        <div class="brand-label">
+          <span class="brand-drop">🩸</span>
+          <span class="brand-name">BloodLink</span>
+        </div>
+
+        <!-- Card type label (top right) -->
+        <div class="card-type-label">DONOR CARD</div>
+
+        <!-- Avatar -->
+        <div class="donor-avatar">
           {{ donor.user.get_full_name|default:donor.user.username|first|upper }}
         </div>
-        <h4 class="mb-0 fw-bold">
+
+        <!-- Name & blood type -->
+        <h4 class="donor-name">
           {{ donor.user.get_full_name|default:donor.user.username }}
-          <span class="text-warning" title="Verified Donor">✔</span>
+          <span style="color:#6c8dfa; font-size:1rem;" title="Verified Donor">&#10003;</span>
         </h4>
-        <span class="badge bg-light text-danger fs-5 px-3 mt-1">{{ donor.blood_type }}</span>
+        <div class="blood-type-badge">{{ donor.blood_type }}</div>
+
       </div>
 
-      <div class="card-body">
+      <!-- Card Body -->
+      <div class="donor-card-body">
 
-        <!-- Details list -->
-        <ul class="list-group list-group-flush mb-4">
-          <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">📍 Location</span>
-            <strong>{{ donor.location|default:"Not specified" }}</strong>
-          </li>
-          <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">🩸 Blood Type</span>
-            <strong>{{ donor.blood_type }}</strong>
-          </li>
-          <li class="list-group-item d-flex justify-content-between">
-            <span class="text-muted">✅ Status</span>
-            {% if donor.is_available %}
-              <span class="badge bg-success">Available</span>
-            {% else %}
-              <span class="badge bg-secondary">Unavailable</span>
-            {% endif %}
-          </li>
-        </ul>
+        <div class="donor-details">
+          <div class="detail-row">
+            <span class="detail-label">📍 Location</span>
+            <span class="detail-value">{{ donor.location|default:"Not specified" }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">🩸 Blood Type</span>
+            <span class="detail-value">{{ donor.blood_type }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">✅ Status</span>
+            <span class="detail-value">
+              {% if donor.is_available %}
+                <span class="status-badge available">Available</span>
+              {% else %}
+                <span class="status-badge unavailable">Unavailable</span>
+              {% endif %}
+            </span>
+          </div>
+        </div>
 
         {% if donor.bio %}
-          <p class="text-muted small fst-italic text-center">"{{ donor.bio }}"</p>
+          <p class="donor-bio">"{{ donor.bio }}"</p>
         {% endif %}
 
-        <!-- Contact info — only shown when a request is accepted (M4 will wire push notif) -->
-        {# Contact is revealed on my_requests.html after acceptance, not here #}
+        <!-- QR Code section -->
+        <div class="qr-section">
+          <div id="qrcode"></div>
+          <p class="qr-label">Scan to view profile</p>
+        </div>
 
       </div>
 
-      <div class="card-footer bg-white text-center py-3">
-        {% if existing_request %}
-          <div class="alert alert-info mb-0 py-2">
-            ⏳ You already have a pending request to this donor.
-            <a href="{% url 'my_requests' %}">View it here.</a>
-          </div>
-        {% elif donor.is_available %}
-          <a href="{% url 'send_request' donor.pk %}" class="btn btn-danger w-100">
-            🩸 Send Donation Request
-          </a>
-        {% else %}
-          <button class="btn btn-secondary w-100" disabled>
-            Donor Currently Unavailable
-          </button>
-        {% endif %}
+      <!-- Card Footer -->
+      <div class="donor-card-footer">
+        <span class="footer-url">BloodLink</span>
+        <span class="footer-tagline">Connecting donors &amp; recipients</span>
       </div>
 
     </div>
+    <!-- END DONOR CARD -->
+
+    <!-- Action Buttons (hidden on print) -->
+    <div class="action-buttons no-print mt-3">
+      {% if existing_request %}
+        <div class="alert alert-info mb-2 py-2">
+          ⏳ You already have a pending request to this donor.
+          <a href="{% url 'my_requests' %}">View it here.</a>
+        </div>
+      {% elif donor.is_available %}
+        <a href="{% url 'send_request' donor.pk %}" class="btn btn-danger w-100 mb-2">
+          🩸 Send Donation Request
+        </a>
+      {% else %}
+        <button class="btn btn-secondary w-100 mb-2" disabled>
+          Donor Currently Unavailable
+        </button>
+      {% endif %}
+
+      <button onclick="downloadCard()" class="btn btn-outline-danger w-100">
+        📄 Download Donor Card (PDF)
+      </button>
+    </div>
+
   </div>
 </div>
+
+<!-- QR Code Library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<style>
+  /* ── DONOR CARD STYLES ── */
+  .donor-card {
+    border-radius: 20px;
+    overflow: hidden;
+    border: none;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  .donor-card-header {
+    background: linear-gradient(135deg, #c0392b 0%, #e74c3c 60%, #e85d5d 100%);
+    color: white;
+    text-align: center;
+    padding: 24px 20px 20px;
+    position: relative;
+  }
+
+  .brand-label {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    opacity: 0.95;
+  }
+
+  .brand-drop { font-size: 1rem; }
+  .brand-name { font-size: 0.85rem; letter-spacing: 1px; }
+
+  .card-type-label {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    opacity: 0.85;
+    border: 1px solid rgba(255,255,255,0.6);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .donor-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: white;
+    color: #c0392b;
+    font-size: 2.2rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  .donor-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .blood-type-badge {
+    display: inline-block;
+    background: white;
+    color: #c0392b;
+    font-size: 1.3rem;
+    font-weight: 800;
+    padding: 4px 20px;
+    border-radius: 30px;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .donor-card-body {
+    background: white;
+    padding: 20px;
+  }
+
+  .donor-details {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+    margin-bottom: 16px;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f5f5f5;
+  }
+
+  .detail-row:last-child { border-bottom: none; }
+
+  .detail-label { color: #888; font-size: 0.9rem; }
+  .detail-value { font-weight: 600; font-size: 0.9rem; }
+
+  .status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .status-badge.available { background: #d4edda; color: #155724; }
+  .status-badge.unavailable { background: #e2e3e5; color: #383d41; }
+
+  .donor-bio {
+    text-align: center;
+    color: #888;
+    font-style: italic;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+  }
+
+  /* QR Code */
+  .qr-section {
+    text-align: center;
+    padding: 12px 0 4px;
+    border-top: 1px dashed #eee;
+  }
+
+  #qrcode {
+    display: inline-block;
+    padding: 8px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #eee;
+  }
+
+  #qrcode canvas, #qrcode img {
+    display: block;
+  }
+
+  .qr-label {
+    font-size: 0.72rem;
+    color: #aaa;
+    margin-top: 6px;
+    margin-bottom: 0;
+  }
+
+  /* Card Footer */
+  .donor-card-footer {
+    background: #fafafa;
+    border-top: 1px solid #f0f0f0;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-url {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #c0392b;
+    letter-spacing: 0.5px;
+  }
+
+  .footer-tagline {
+    font-size: 0.7rem;
+    color: #aaa;
+  }
+
+  @media print {
+    @page {
+      size: A4;
+      margin-top: 1cm;
+      margin-bottom: 0;
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    .no-print { display: none !important; }
+
+    body * { visibility: hidden; }
+
+    #donor-card, #donor-card * { visibility: visible; }
+
+    #donor-card {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 380px;
+      box-shadow: none !important;
+    }
+  }
+</style>
+
+<script>
+  // Generate QR code pointing to this donor's profile URL
+  const profileUrl = window.location.href;
+
+  new QRCode(document.getElementById('qrcode'), {
+    text: profileUrl,
+    width: 100,
+    height: 100,
+    colorDark: '#c0392b',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  // PDF Download
+  function downloadCard() {
+    const originalTitle = document.title;
+    document.title = 'Donor Card - {{ donor.user.get_full_name|default:donor.user.username }}';
+    window.print();
+    document.title = originalTitle;
+  }
+</script>
 
 {% endblock %}

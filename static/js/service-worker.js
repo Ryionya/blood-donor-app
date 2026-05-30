@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bloodlink-v3';
+const CACHE_NAME = 'bloodlink-v5';
 
 // Safe static assets only
 const STATIC_ASSETS = [
@@ -117,6 +117,36 @@ self.addEventListener('fetch', event => {
         return;
     }
 
+    // DONOR CARD → NETWORK FIRST, CACHE FOR OFFLINE
+    if (url.pathname.startsWith('/recipients/donor/')) {
+
+        event.respondWith(
+
+            caches.open(CACHE_NAME).then(cache => {
+
+                return fetch(event.request)
+                    .then(response => {
+
+                        // Save a fresh copy whenever online
+                        if (response && response.status === 200 && !response.redirected) {
+                            cache.put(event.request, response.clone());
+                        }
+
+                        return response;
+                    })
+
+                    .catch(() => {
+                        // Offline → serve cached card
+                        return caches.match(event.request);
+                    });
+
+            })
+
+        );
+
+        return;
+    }
+
     // DYNAMIC PAGES → NETWORK FIRST
     event.respondWith(
 
@@ -180,5 +210,4 @@ self.addEventListener('notificationclick', event => {
             event.notification.data.url || '/'
         )
     );
-
 });
