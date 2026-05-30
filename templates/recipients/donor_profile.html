@@ -10,25 +10,27 @@
       ← Back to Search
     </a>
 
-    <!-- DONOR CARD -->
     <div id="donor-card" class="donor-card shadow-lg">
 
-      <!-- Header strip -->
-      <div class="card-header bg-danger text-white text-center py-4">
-        <div
-          class="rounded-circle bg-white text-danger d-inline-flex align-items-center justify-content-center mb-2"
-          style="width:72px;height:72px;font-size:2rem;font-weight:700;"
-        >
+      <div class="donor-card-header text-white text-center py-4">
+        <div class="brand-label">
+          <span class="brand-drop">🩸</span>
+          <span class="brand-name">BloodLink</span>
+        </div>
+        <div class="card-type-label">DONOR CARD</div>
+
+        <div class="donor-avatar d-inline-flex align-items-center justify-content-center mb-2">
           {{ donor.user.get_full_name|default:donor.user.username|first|upper }}
         </div>
-        <h4 class="mb-0 fw-bold">
+        <h4 class="donor-name mb-0 fw-bold">
           {{ donor.user.get_full_name|default:donor.user.username }}
           <span class="text-warning" title="Verified Donor">✔</span>
         </h4>
-        <span class="badge bg-light text-danger fs-5 px-3 mt-1">{{ donor.blood_type }}</span>
+        <div class="mt-2">
+          <span class="blood-type-badge">{{ donor.blood_type }}</span>
+        </div>
       </div>
 
-      <!-- Card Body -->
       <div class="donor-card-body">
 
         <div class="donor-details">
@@ -56,7 +58,6 @@
           <p class="donor-bio">"{{ donor.bio }}"</p>
         {% endif %}
 
-        <!-- QR Code section -->
         <div class="qr-section">
           <div id="qrcode"></div>
           <p class="qr-label">Scan to view profile</p>
@@ -64,16 +65,12 @@
 
       </div>
 
-      <!-- Card Footer -->
       <div class="donor-card-footer">
         <span class="footer-url">BloodLink</span>
         <span class="footer-tagline">Connecting donors &amp; recipients</span>
       </div>
 
     </div>
-    <!-- END DONOR CARD -->
-
-    <!-- Action Buttons (hidden on print) -->
     <div class="action-buttons no-print mt-3">
       {% if existing_request %}
         <div class="alert alert-info mb-2 py-2">
@@ -98,7 +95,6 @@
   </div>
 </div>
 
-<!-- QR Code Library -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
 <style>
@@ -111,10 +107,10 @@
   }
 
   .donor-card-header {
-    background: linear-gradient(135deg, #c0392b 0%, #e74c3c 60%, #e85d5d 100%);
+    background: linear-gradient(135deg, #c0392b 0%, #e74c3c 60%, #e85d5d 100%) !important;
     color: white;
     text-align: center;
-    padding: 24px 20px 20px;
+    padding: 35px 20px 20px;
     position: relative;
   }
 
@@ -151,8 +147,8 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: white;
-    color: #c0392b;
+    background: white !important;
+    color: #c0392b !important;
     font-size: 2.2rem;
     font-weight: 800;
     display: flex;
@@ -170,8 +166,8 @@
 
   .blood-type-badge {
     display: inline-block;
-    background: white;
-    color: #c0392b;
+    background: white !important;
+    color: #c0392b !important;
     font-size: 1.3rem;
     font-weight: 800;
     padding: 4px 20px;
@@ -181,7 +177,7 @@
   }
 
   .donor-card-body {
-    background: white;
+    background: white !important;
     padding: 20px;
   }
 
@@ -203,7 +199,7 @@
   .detail-row:last-child { border-bottom: none; }
 
   .detail-label { color: #888; font-size: 0.9rem; }
-  .detail-value { font-weight: 600; font-size: 0.9rem; }
+  .detail-value { font-weight: 600; font-size: 0.9rem; color: #333; }
 
   .status-badge {
     padding: 4px 12px;
@@ -212,8 +208,8 @@
     font-weight: 600;
   }
 
-  .status-badge.available { background: #d4edda; color: #155724; }
-  .status-badge.unavailable { background: #e2e3e5; color: #383d41; }
+  .status-badge.available { background: #d4edda !important; color: #155724 !important; }
+  .status-badge.unavailable { background: #e2e3e5 !important; color: #383d41 !important; }
 
   .donor-bio {
     text-align: center;
@@ -233,7 +229,7 @@
   #qrcode {
     display: inline-block;
     padding: 8px;
-    background: white;
+    background: white !important;
     border-radius: 8px;
     border: 1px solid #eee;
   }
@@ -251,7 +247,7 @@
 
   /* Card Footer */
   .donor-card-footer {
-    background: #fafafa;
+    background: #fafafa !important;
     border-top: 1px solid #f0f0f0;
     padding: 10px 20px;
     display: flex;
@@ -262,7 +258,7 @@
   .footer-url {
     font-size: 0.75rem;
     font-weight: 700;
-    color: #c0392b;
+    color: #c0392b !important;
     letter-spacing: 0.5px;
   }
 
@@ -274,7 +270,7 @@
   @media print {
     @page {
       size: A4;
-      margin-top: 1cm;
+      margin-top: 2cm;
       margin-bottom: 0;
       margin-left: 0;
       margin-right: 0;
@@ -284,22 +280,26 @@
 
     body * { visibility: hidden; }
 
-    #donor-card, #donor-card * { visibility: visible; }
+    /* Ligtas na puwersang pangkulay kahit saan browser */
+    #donor-card, #donor-card * {
+      visibility: visible;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
 
     #donor-card {
       position: fixed;
-      top: 50%;
+      top: 45%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 380px;
       box-shadow: none !important;
-      border: 1px solid #ccc !important;
+      border: 1px solid #ddd !important;
     }
   }
 </style>
 
 <script>
-  // Generate QR code pointing to this donor's profile URL
   const profileUrl = window.location.href;
 
   new QRCode(document.getElementById('qrcode'), {
@@ -311,7 +311,6 @@
     correctLevel: QRCode.CorrectLevel.H
   });
 
-  // PDF Download
   function downloadCard() {
     const originalTitle = document.title;
     document.title = 'Donor Card - {{ donor.user.get_full_name|default:donor.user.username }}';
