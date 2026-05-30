@@ -80,6 +80,13 @@ def admin_review_application(request, pk):
     if request.method == 'POST':
         action = request.POST.get('action')  # 'approve' or 'reject'
         note = request.POST.get('admin_note', '').strip()
+        flag_user = request.POST.get('flag_user')
+
+        if flag_user:
+            application.donor.is_flagged = True
+            application.donor.save()
+            messages.warning(request, f"{application.donor.username} has been flagged for suspicious behavior.")
+
 
         if action == 'approve':
             application.status = DonorApplication.STATUS_APPROVED

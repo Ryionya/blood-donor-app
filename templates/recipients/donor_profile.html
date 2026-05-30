@@ -13,30 +13,19 @@
     <!-- DONOR CARD -->
     <div id="donor-card" class="donor-card shadow-lg">
 
-      <!-- Card Header -->
-      <div class="donor-card-header">
-
-        <!-- BloodLink branding (top left) -->
-        <div class="brand-label">
-          <span class="brand-drop">🩸</span>
-          <span class="brand-name">BloodLink</span>
-        </div>
-
-        <!-- Card type label (top right) -->
-        <div class="card-type-label">DONOR CARD</div>
-
-        <!-- Avatar -->
-        <div class="donor-avatar">
+      <!-- Header strip -->
+      <div class="card-header bg-danger text-white text-center py-4">
+        <div
+          class="rounded-circle bg-white text-danger d-inline-flex align-items-center justify-content-center mb-2"
+          style="width:72px;height:72px;font-size:2rem;font-weight:700;"
+        >
           {{ donor.user.get_full_name|default:donor.user.username|first|upper }}
         </div>
-
-        <!-- Name & blood type -->
-        <h4 class="donor-name">
+        <h4 class="mb-0 fw-bold">
           {{ donor.user.get_full_name|default:donor.user.username }}
-          <span style="color:#6c8dfa; font-size:1rem;" title="Verified Donor">&#10003;</span>
+          <span class="text-warning" title="Verified Donor">✔</span>
         </h4>
-        <div class="blood-type-badge">{{ donor.blood_type }}</div>
-
+        <span class="badge bg-light text-danger fs-5 px-3 mt-1">{{ donor.blood_type }}</span>
       </div>
 
       <!-- Card Body -->

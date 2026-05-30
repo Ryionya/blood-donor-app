@@ -21,7 +21,21 @@
                         {% endfor %}
                     </div>
                     {% endfor %}
+
+                    <!-- Remember Me -->
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" name="remember_me" id="rememberMe">
+                        <label class="form-check-label text-muted" for="rememberMe">Remember me for 30 days</label>
+                    </div>
+
                     <button type="submit" class="btn btn-danger w-100">Log In</button>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            By logging in, you agree to our
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>.
+                        </small>
+                    </div>
                 </form>
                 <p class="text-center mt-3 text-muted">
                     No account yet? <a href="{% url 'register' %}">Register</a>
@@ -29,5 +43,104 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Privacy Modal -->
+<div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content rounded-4 overflow-hidden">
+
+      <!-- Header -->
+      <div class="modal-header bg-danger text-white border-0 py-3">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-shield-halved fs-4"></i>
+          <h5 class="modal-title fw-bold mb-0" id="privacyModalLabel">Privacy Policy</h5>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4 py-3">
+        <p class="text-muted" style="font-size:12px;">
+          <i class="fa-regular fa-clock me-1"></i>Last updated: May 2026
+        </p>
+
+        <!-- Section 1 -->
+        <div class="d-flex gap-3 mb-4">
+          <div class="text-danger mt-1"><i class="fa-solid fa-database fs-5"></i></div>
+          <div>
+            <h6 class="fw-bold mb-1">What data we collect</h6>
+            <ul class="text-muted mb-0" style="font-size:14px;">
+              <li>Full name, username, and email address</li>
+              <li>Phone number and location</li>
+              <li>Blood type and donor profile information</li>
+              <li>Uploaded documents (Government ID, Medical Certificate)</li>
+              <li>Donation history and cooldown status</li>
+              <li>Profile picture (optional)</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Section 2 -->
+        <div class="d-flex gap-3 mb-4">
+          <div class="text-danger mt-1"><i class="fa-solid fa-gear fs-5"></i></div>
+          <div>
+            <h6 class="fw-bold mb-1">How we use your data</h6>
+            <ul class="text-muted mb-0" style="font-size:14px;">
+              <li>To match blood donors with recipients in need</li>
+              <li>To verify donor eligibility through document review</li>
+              <li>To send notifications about application status and donation requests</li>
+              <li>To track donation cooldown periods for donor safety</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Section 3 -->
+        <div class="d-flex gap-3 mb-4">
+          <div class="text-danger mt-1"><i class="fa-solid fa-lock fs-5"></i></div>
+          <div>
+            <h6 class="fw-bold mb-1">How we store your data</h6>
+            <p class="text-muted mb-0" style="font-size:14px;">
+              Your data is stored securely in our database. Uploaded documents are stored on our
+              servers and are only accessible to authorized administrators for verification purposes.
+            </p>
+          </div>
+        </div>
+
+        <!-- Section 4 -->
+        <div class="d-flex gap-3 mb-4">
+          <div class="text-danger mt-1"><i class="fa-solid fa-eye fs-5"></i></div>
+          <div>
+            <h6 class="fw-bold mb-1">Who can see your data</h6>
+            <ul class="text-muted mb-0" style="font-size:14px;">
+              <li>Your name and blood type are visible to recipients when browsing donors</li>
+              <li>Your uploaded documents are only visible to admins during verification</li>
+              <li>Your contact details are only shared when a donation request is accepted</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Section 5 -->
+        <div class="d-flex gap-3 mb-2">
+          <div class="text-danger mt-1"><i class="fa-solid fa-user-shield fs-5"></i></div>
+          <div>
+            <h6 class="fw-bold mb-1">Your rights</h6>
+            <p class="text-muted mb-0" style="font-size:14px;">
+              You may request deletion of your account and associated data at any time by
+              contacting the BloodLink admin team.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer border-0 bg-light">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger btn-sm px-4" data-bs-dismiss="modal">
+          <i class="fa-solid fa-check me-1"></i> I Understand
+        </button>
+      </div>
+
+    </div>
+  </div>
 </div>
 {% endblock %}
