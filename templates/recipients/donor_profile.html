@@ -18,13 +18,27 @@
           class="rounded-circle bg-white text-danger d-inline-flex align-items-center justify-content-center mb-2"
           style="width:72px;height:72px;font-size:2rem;font-weight:700;"
         >
-          {{ donor.user.get_full_name|default:donor.user.username|first|upper }}
+          {{ donor.user.username|first|upper }}
         </div>
         <h4 class="mb-0 fw-bold">
-          {{ donor.user.get_full_name|default:donor.user.username }}
-          <span class="text-warning" title="Verified Donor">✔</span>
+          {% if accepted_request %}
+            {{ donor.user.get_full_name|default:donor.user.username }}
+          {% else %}
+            {{ donor.user.username }}
+          {% endif %}
+          <span title="Verified Donor" style="color:#185fa5; font-size:14px;">
+            <i class="fa-solid fa-circle-check"></i>
+          </span>
         </h4>
-        <span class="badge bg-light text-danger fs-5 px-3 mt-1">{{ donor.blood_type }}</span>
+        {% if accepted_request %}
+          <small class="badge bg-light text-success mt-1">
+            <i class="fa-solid fa-unlock me-1"></i> Full details unlocked
+          </small>
+        {% else %}
+          <small class="text-white-50" style="font-size:12px;">
+            <i class="fa-solid fa-lock me-1"></i> Accept request to reveal full name
+          </small>
+        {% endif %}
       </div>
 
       <div class="card-body">

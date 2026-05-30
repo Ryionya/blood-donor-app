@@ -47,6 +47,13 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
+
+              # Remember Me — 30 days
+            if request.POST.get('remember_me'):
+                request.session.set_expiry(30 * 24 * 60 * 60)  # 30 days in seconds
+            else:
+                request.session.set_expiry(0)  # expires when browser closes
+                
             messages.success(request, f'Welcome back, {user.first_name or user.username}!')
             if user.is_staff or user.is_superuser:
                 return redirect('admin_dashboard')

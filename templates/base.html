@@ -276,7 +276,7 @@
 
         {% block extra_js %}{% endblock %}
 
-        <!-- Modern Install Card -->
+    {% if user.is_authenticated %}
     <!-- Modern Install Card -->
     <div id="installCard"
         class="d-none position-fixed bottom-0 end-0 m-3"
@@ -356,7 +356,6 @@
         installCard.classList.add('d-none');
     });
     </script>
-
+    {% endif %}
     </body> 
-      </body>
     </html>

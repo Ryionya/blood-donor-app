@@ -78,9 +78,16 @@ def donor_profile_view(request, donor_id):
         status='pending',
     ).first()
 
+    accepted_request = BloodRequest.objects.filter(
+        recipient=request.user,
+        donor=donor.user,
+        status='accepted',
+    ).exists()
+
     return render(request, 'recipients/donor_profile.html', {
         'donor':            donor,
         'existing_request': existing_request,
+        'accepted_request': accepted_request,
     })
 
 

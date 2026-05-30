@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4" style="max-width:700px">
-<a href="{% url 'admin_application_queue' %}" class="btn btn-outline-secondary btn-sm">
+  <a href="{% url 'admin_application_queue' %}" class="btn btn-outline-secondary btn-sm">
     ← Back to Queue
-</a>
+  </a>
   <h2 class="mt-2">Review Application</h2>
 
   {% if messages %}
@@ -14,78 +14,187 @@
 
   <div class="card mt-3">
     <div class="card-body">
-      <p><strong>Name:</strong> {{ application.donor.get_full_name }}</p>
+
+       <div class="d-flex align-items-center gap-3 mb-3">
+        <a href="{% if application.donor.profile_picture %}{{ application.donor.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ application.donor.first_name|default:application.donor.username }}+{{ application.donor.last_name }}&background=C0392B&color=fff&size=128{% endif %}" target="_blank">
+          <img
+            src="{% if application.donor.profile_picture %}{{ application.donor.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ application.donor.first_name|default:application.donor.username }}+{{ application.donor.last_name }}&background=C0392B&color=fff&size=128{% endif %}"
+            class="rounded-circle border border-2 border-danger"
+            style="width:70px; height:70px; object-fit:cover; cursor:pointer;">
+        </a>
+        <div>
+          <h5 class="mb-0 fw-bold">{{ application.donor.get_full_name|default:application.donor.username }}</h5>
+          <small class="text-muted">@{{ application.donor.username }}</small>
+          <small class="text-muted d-block mt-1" style="font-size:11px;">
+          <i class="fa-solid fa-up-right-from-square me-1"></i>Click photo to view full size
+          </small>
+        </div>
+      </div>
+
+      <hr class="my-2">
       <p><strong>Email:</strong> {{ application.donor.email }}</p>
       <p><strong>Blood Type:</strong> {{ application.donor.donor_profile.blood_type }}</p>
-      <p><strong>Last Donation:</strong>
-        {{ application.last_donation_date|default:"Not provided" }}
-      </p>
       <p><strong>Submitted:</strong> {{ application.submitted_at|date:"M d, Y" }}</p>
     </div>
   </div>
 
-  {# Document viewer — see Task 4 #}
- {% load static %}
-<div class="mt-3 mb-4">
-  <h5>Uploaded Documents</h5>
-
-  <div class="row g-3 mt-1">
-    <div class="col-md-6">
-      <p class="fw-bold mb-1">Government ID</p>
-      {% if application.government_id %}
-        {% with name=application.government_id.name %}
-          <a href="{{ application.government_id.url }}" target="_blank" style="text-decoration:none;">
-            {% if '.pdf' in name %}
-              <div class="border rounded p-3 text-center bg-light" style="height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
-                <span style="font-size:48px;">📄</span>
-                <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
-                <small class="text-muted">{{ name }}</small>
-              </div>
-            {% else %}
-              <img src="{{ application.government_id.url }}"
-                class="img-fluid rounded border" alt="Government ID"
-                style="max-height:300px; object-fit:contain; width:100%; cursor:pointer;">
-            {% endif %}
-          </a>
-        {% endwith %}
-      {% else %}
-        <p class="text-muted">Not uploaded</p>
-      {% endif %}
-    </div>
-
-    <div class="col-md-6">
-      <p class="fw-bold mb-1">Medical Certificate</p>
-      {% if application.medical_certificate %}
-        {% with name=application.medical_certificate.name %}
-          <a href="{{ application.medical_certificate.url }}" target="_blank" style="text-decoration:none;">
-            {% if '.pdf' in name %}
-              <div class="border rounded p-3 text-center bg-light" style="height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
-                <span style="font-size:48px;">📄</span>
-                <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
-                <small class="text-muted">{{ name }}</small>
-              </div>
-            {% else %}
-              <img src="{{ application.medical_certificate.url }}"
-                class="img-fluid rounded border" alt="Medical Certificate"
-                style="max-height:300px; object-fit:contain; width:100%; cursor:pointer;">
-            {% endif %}
-          </a>
-        {% endwith %}
-      {% else %}
-        <p class="text-muted">Not uploaded</p>
-      {% endif %}
+  <!-- Document Verification Guide -->
+  <div class="card mt-3 border-0 bg-light">
+    <div class="card-body">
+      <h6 class="fw-bold text-uppercase text-muted mb-3">
+        <i class="fa-solid fa-clipboard-check text-danger me-2"></i>Document Verification Guide
+      </h6>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="d-flex gap-2">
+            <i class="fa-solid fa-id-card text-danger mt-1"></i>
+            <div>
+              <p class="fw-semibold mb-1" style="font-size:14px;">Government ID</p>
+              <ul class="text-muted mb-0" style="font-size:13px;">
+                <li>Face must be clearly visible</li>
+                <li>Full name must be readable</li>
+                <li>ID must not be expired</li>
+                <li>Photo must match donor profile</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="d-flex gap-2">
+            <i class="fa-solid fa-file-medical text-danger mt-1"></i>
+            <div>
+              <p class="fw-semibold mb-1" style="font-size:14px;">Medical Certificate</p>
+              <ul class="text-muted mb-0" style="font-size:13px;">
+                <li>Blood type must be clearly stated</li>
+                <li>Must match declared blood type ({{ application.donor.donor_profile.blood_type }})</li>
+                <li>Must be issued by a licensed physician</li>
+                <li>Must not be older than 1 year</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
-<form method="POST" class="mt-4">
+
+  {% load static %}
+  <div class="mt-3 mb-4">
+    <h5>Uploaded Documents</h5>
+    <div class="row g-3 mt-1">
+      <div class="col-md-6">
+        <p class="fw-bold mb-1">Government ID</p>
+        {% if application.government_id %}
+          {% with name=application.government_id.name %}
+            <a href="{{ application.government_id.url }}" target="_blank" style="text-decoration:none;">
+              {% if '.pdf' in name %}
+                <div class="border rounded p-3 text-center bg-light" style="height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                  <span style="font-size:48px;">📄</span>
+                  <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
+                  <small class="text-muted">{{ name }}</small>
+                </div>
+              {% else %}
+                <img src="{{ application.government_id.url }}"
+                  class="img-fluid rounded border" alt="Government ID"
+                  style="max-height:300px; object-fit:contain; width:100%; cursor:pointer;">
+              {% endif %}
+            </a>
+          {% endwith %}
+        {% else %}
+          <p class="text-muted">Not uploaded</p>
+        {% endif %}
+      </div>
+
+      <div class="col-md-6">
+        <p class="fw-bold mb-1">Medical Certificate</p>
+        {% if application.medical_certificate %}
+          {% with name=application.medical_certificate.name %}
+            <a href="{{ application.medical_certificate.url }}" target="_blank" style="text-decoration:none;">
+              {% if '.pdf' in name %}
+                <div class="border rounded p-3 text-center bg-light" style="height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                  <span style="font-size:48px;">📄</span>
+                  <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
+                  <small class="text-muted">{{ name }}</small>
+                </div>
+              {% else %}
+                <img src="{{ application.medical_certificate.url }}"
+                  class="img-fluid rounded border" alt="Medical Certificate"
+                  style="max-height:300px; object-fit:contain; width:100%; cursor:pointer;">
+              {% endif %}
+            </a>
+          {% endwith %}
+        {% else %}
+          <p class="text-muted">Not uploaded</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <form method="POST" class="mt-4">
     {% csrf_token %}
+
+    <!-- Flag User -->
+    <div class="card border-warning mb-3">
+      <div class="card-body py-2 px-3">
+        <div class="form-check mb-0">
+          <input type="checkbox" class="form-check-input" name="flag_user" id="flagUser">
+          <label class="form-check-label text-warning fw-semibold" for="flagUser">
+            <i class="fa-solid fa-flag me-1"></i> Flag this user for suspicious behavior
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Notes -->
     <div class="mb-3">
-        <label class="form-label"><strong>Admin Notes</strong></label>
-        <textarea name="admin_note" class="form-control" rows="3" placeholder="Add notes or rejection reason..."></textarea>
+      <label class="form-label fw-bold">Admin Notes / Rejection Reason</label>
+      <p class="text-muted mb-2" style="font-size:13px;">
+        <i class="fa-solid fa-bolt me-1"></i>Quick templates:
+      </p>
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm template-btn"
+          data-text="The face on the Government ID is not clearly visible. Please resubmit with a clearer photo.">
+          🪪 Unclear ID photo
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm template-btn"
+          data-text="The blood type on the Medical Certificate does not match the declared blood type. Please resubmit the correct document.">
+          🩸 Blood type mismatch
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm template-btn"
+          data-text="The Medical Certificate appears to be expired or older than 1 year. Please provide a recent certificate.">
+          📅 Expired medical cert
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm template-btn"
+          data-text="The submitted documents are blurry or unreadable. Please resubmit clearer copies.">
+          🔍 Unreadable documents
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm template-btn"
+          data-text="The name on the documents does not match the registered account name.">
+          ⚠️ Name mismatch
+        </button>
+      </div>
+      <textarea name="admin_note" id="adminNote" class="form-control" rows="3"
+        placeholder="Add notes or rejection reason..."></textarea>
     </div>
+
     <div class="d-flex gap-2">
-        <button type="submit" name="action" value="approve" class="btn btn-success">Approve</button>
-        <button type="submit" name="action" value="reject" class="btn btn-danger">Reject</button>
+      <button type="submit" name="action" value="approve" class="btn btn-success">
+        <i class="fa-solid fa-check me-1"></i> Approve
+      </button>
+      <button type="submit" name="action" value="reject" class="btn btn-danger">
+        <i class="fa-solid fa-x me-1"></i> Reject
+      </button>
     </div>
-</form>
+  </form>
+</div>
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.template-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.getElementById('adminNote').value = this.dataset.text;
+    });
+  });
+</script>
+{% endblock %}
+
 {% endblock %}
