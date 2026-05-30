@@ -30,6 +30,9 @@
                             <small class="text-muted">Click the camera icon to upload</small><br>
                             <small class="text-muted">JPG, PNG, GIF, WEBP only — max 5MB</small>
                         </div>
+                        {% for error in form.profile_picture.errors %}
+                            <div class="invalid-feedback d-block mt-1 text-center">{{ error }}</div>
+                        {% endfor %}
                     </div>
 
                     <div class="mb-3">
@@ -47,7 +50,7 @@
                     </div>
 
                     {% for field in form %}
-                        {% if field.name != 'role' %}
+                        {% if field.name != 'role' and field.name != 'profile_picture' %}
                         <div class="mb-3">
                             <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                             <input type="{{ field.field.widget.input_type }}"
@@ -88,9 +91,9 @@
             }
 
             // Validate file size (max 5MB)
-            const maxSize = 2 * 1024 * 1024;
+            const maxSize = 5 * 1024 * 1024;
             if (file.size > maxSize) {
-                alert('File is too large. Maximum size is 2MB.');
+                alert('File is too large. Maximum size is 5MB.');
                 this.value = '';
                 return;
             }
