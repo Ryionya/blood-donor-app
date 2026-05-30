@@ -93,6 +93,20 @@
 </div>
 {% endif %}
 
+<!-- AI Recommendation List -->
+{% if ai_recommendation %}
+<div class="alert border-0 shadow-sm mb-4" 
+     style="background: linear-gradient(135deg, #fff5f5, #ffe0e0); border-left: 4px solid #C0392B !important;">
+    <div class="d-flex align-items-start gap-2">
+        <span style="font-size: 1.5rem;">🤖</span>
+        <div>
+            <strong class="text-danger">AI Recommendation</strong>
+            <p class="mb-0 mt-1 text-dark">{{ ai_recommendation }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- ── Donor Cards Grid ─────────────────────────────────── -->
 {% if donors %}
   <div class="row g-4">
