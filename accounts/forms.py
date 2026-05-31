@@ -74,6 +74,9 @@ class DonorProfileForm(forms.ModelForm):
             'government_id': forms.FileInput(attrs={'accept': '.jpg,.jpeg,.png,.pdf'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['blood_type'].required = False
 
 class RecipientProfileForm(forms.ModelForm):
     class Meta:

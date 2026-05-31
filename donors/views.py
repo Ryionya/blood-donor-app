@@ -52,6 +52,7 @@ def apply_donor(request):
             application = form.save(commit=False)
             application.donor = request.user
             application.status = DonorApplication.STATUS_PENDING
+            application.government_id = request.user.donor_profile.government_id
             application.save()
 
             return redirect('application_submitted')

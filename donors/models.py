@@ -45,6 +45,7 @@ class DonorApplication(models.Model):
     admin_notes = models.TextField(blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    government_id = models.FileField(upload_to='applications/ids/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.donor.username} — {self.status}"

@@ -176,26 +176,37 @@ def send_request_view(request, donor_id):
                 medical_certificate=medical_cert,
                 status='pending_admin',
             )
+        # Snapshot government IDs
+        recipient_profile = getattr(request.user, 'recipient_profile', None)
+        if recipient_profile and recipient_profile.government_id:
+            blood_request.recipient_government_id = recipient_profile.government_id
+        elif hasattr(request.user, 'donor_profile') and request.user.donor_profile.government_id:
+            blood_request.recipient_government_id = request.user.donor_profile.government_id
 
-            try:
-                payload = {
-                    'head': '🩸 New Blood Request',
-                    'body': f'{request.user.get_full_name() or request.user.username} needs your help at {hospital_name}.',
-                    'icon': '/static/images/icon-192.png',
-                    'url': '/incoming-requests/',
-                }
-                send_user_notification(user=donor.user, payload=payload, ttl=1000)
-            except Exception:
-                pass
+        if hasattr(donor.user, 'donor_profile') and donor.user.donor_profile.government_id:
+            blood_request.donor_government_id = donor.user.donor_profile.government_id
 
-            Notification.objects.create(
-                user=donor.user,
-                notif_type='request',
-                message=f'{request.user.get_full_name() or request.user.username} sent you a blood donation request for {hospital_name}.',
-            )
+        blood_request.save()
 
-            messages.success(request, 'Request sent successfully!')
-            return redirect('my_requests')
+        try:
+            payload = {
+                'head': '🩸 New Blood Request',
+                'body': f'{request.user.get_full_name() or request.user.username} needs your help at {hospital_name}.',
+                'icon': '/static/images/icon-192.png',
+                'url': '/incoming-requests/',
+            }
+            send_user_notification(user=donor.user, payload=payload, ttl=1000)
+        except Exception:
+            pass
+
+        Notification.objects.create(
+            user=donor.user,
+            notif_type='request',
+            message=f'{request.user.get_full_name() or request.user.username} sent you a blood donation request for {hospital_name}.',
+        )
+
+        messages.success(request, 'Request sent successfully!')
+        return redirect('my_requests')
 
     urgency_choices = [
         ('low',      'Low — Scheduled donation'),

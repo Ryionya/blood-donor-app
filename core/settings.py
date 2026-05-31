@@ -168,22 +168,22 @@ CLOUDINARY_STORAGE = {
     'PREFIX': 'bloodlink',
 }
 
-cloudinary.config(
-    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
-    api_key=os.getenv('CLOUDINARY_API_KEY'),
-    api_secret=os.getenv('CLOUDINARY_API_SECRET'),
-    secure=True
-)
+#cloudinary.config(
+  #  cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+  #  api_key=os.getenv('CLOUDINARY_API_KEY'),
+  #  api_secret=os.getenv('CLOUDINARY_API_SECRET'),
+  #  secure=True
+#)
 
 # Use Cloudinary for media files
-STORAGES = {
-    "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
-}
+#STORAGES = {
+#    "default": {
+ #       "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+ #   },
+ #   "staticfiles": {
+ #       "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+ #   },
+#}
 
 # Static files
 STATIC_URL = '/static/'

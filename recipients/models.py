@@ -34,6 +34,8 @@ class BloodRequest(models.Model):
     admin_notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     responded_at = models.DateTimeField(null=True, blank=True)
+    recipient_government_id = models.FileField(upload_to='requests/recipient_ids/', blank=True, null=True)
+    donor_government_id = models.FileField(upload_to='requests/donor_ids/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.recipient.username} → {self.donor.username} ({self.status})"

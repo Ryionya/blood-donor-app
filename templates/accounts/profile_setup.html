@@ -104,20 +104,21 @@
                     {% if donor_form %}
                     <hr>
                     <h6 class="fw-semibold text-uppercase text-muted mb-2">Donor Info</h6>
-                    <div class="mb-3">
-                        <label class="form-label">Blood Type</label>
-                        {% if request.user.donor_profile.is_verified %}
-                            <input type="text" class="form-control" value="{{ request.user.donor_profile.blood_type }}" readonly>
-                        {% else %}
-                            <select name="blood_type" class="form-select">
-                                {% for value, label in donor_form.fields.blood_type.choices %}
-                                    <option value="{{ value }}" {% if donor_form.initial.blood_type == value %}selected{% endif %}>
-                                        {{ label }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        {% endif %}
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label">Blood Type</label>
+                            {% if request.user.donor_profile.is_verified %}
+                                <input type="text" class="form-control" value="{{ request.user.donor_profile.blood_type }}" readonly>
+                                <input type="hidden" name="blood_type" value="{{ request.user.donor_profile.blood_type }}">
+                            {% else %}
+                                <select name="blood_type" class="form-select">
+                                    {% for value, label in donor_form.fields.blood_type.choices %}
+                                        <option value="{{ value }}" {% if donor_form.initial.blood_type == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
+                        </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Government ID <span class="text-danger">*</span></label>
                         {% if request.user.donor_profile.government_id %}
@@ -127,7 +128,7 @@
                                 </a>
                             </div>
                         {% endif %}
-                        <input type="file" name="government_id" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
+                        <input type="file" name="donor_government_id" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
                         <small class="text-muted">
                             <i class="fa-solid fa-circle-info me-1"></i>
                             Required before submitting a donor application. Accepted: JPG, PNG, PDF. Max 5MB.

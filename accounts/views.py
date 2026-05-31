@@ -124,14 +124,25 @@ def profile_setup_view(request):
         if profile_form.is_valid():
             profile_form.save()
 
-            if donor_form and donor_form.is_valid():
-                donor_form.save()
+        if donor_form and donor_form.is_valid():
+            donor_instance = donor_form.save(commit=False)
+            if 'donor_government_id' in request.FILES:
+                donor_instance.government_id = request.FILES['donor_government_id']
+            # Don't overwrite blood type if donor is verified
+            if donor_profile and donor_profile.is_verified:
+                donor_instance.blood_type = donor_profile.blood_type
+            donor_instance.save()
 
-            if recipient_form and recipient_form.is_valid():
-                recipient_form.save()
+        if recipient_form and recipient_form.is_valid():
+            recipient_instance = recipient_form.save(commit=False)
+            if 'government_id' in request.FILES:
+                recipient_instance.government_id = request.FILES['government_id']
+            else:
+                recipient_instance.government_id = recipient_profile.government_id
+            recipient_instance.save()
 
-            messages.success(request, 'Profile updated successfully!')
-            return redirect('home')
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('home')
 
     else:
         profile_form = ProfileSetupForm(instance=user)
