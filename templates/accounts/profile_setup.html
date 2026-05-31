@@ -107,9 +107,14 @@
                     <h6 class="fw-semibold text-uppercase text-muted mb-2">Donor Info</h6>
                         <div class="mb-3">
                             <label class="form-label">Blood Type</label>
-                            {% if request.user.donor_profile.is_verified %}
-                                <input type="text" class="form-control" value="{{ request.user.donor_profile.blood_type }}" readonly>
-                                <input type="hidden" name="blood_type" value="{{ request.user.donor_profile.blood_type }}">
+                            <!-- ↓ CHANGED: is_blood_type_locked instead of is_verified -->
+                            <!-- stays locked even when is_verified=False during re-verification -->
+                            {% if donor_profile.is_blood_type_locked %}
+                                <input type="text" class="form-control bg-light" value="{{ donor_profile.blood_type }}" readonly>
+                                <input type="hidden" name="blood_type" value="{{ donor_profile.blood_type }}">
+                                <div class="form-text text-muted">
+                                    🔒 Blood type is locked after verification and cannot be changed.
+                                </div>
                             {% else %}
                                 <select name="blood_type" class="form-select">
                                     {% for value, label in donor_form.fields.blood_type.choices %}
@@ -175,11 +180,7 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 document.getElementById('avatarPreview').src = e.target.result;
-
-                // Reset remove flag if user picks a new photo
                 document.getElementById('removePicFlag').value = '0';
-
-                // ✅ innerHTML so <strong> renders correctly
                 document.getElementById('profilePicStatus').innerHTML = '<strong>New profile picture selected. Save to confirm.</strong>';
             };
             reader.readAsDataURL(file);
@@ -190,21 +191,15 @@
     const removeBtn = document.getElementById('removePicBtn');
     if (removeBtn) {
         removeBtn.addEventListener('click', function() {
-            // Set flag so Django knows to delete the picture
             document.getElementById('removePicFlag').value = '1';
 
-            // Reset preview to default avatar
             const name = "{{ request.user.first_name|default:request.user.username }} {{ request.user.last_name }}";
             document.getElementById('avatarPreview').src =
                 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=C0392B&color=fff&size=128';
 
-            // Clear the file input
             document.getElementById('profilePicInput').value = '';
-
-            // Hide the remove button
             removeBtn.style.display = 'none';
 
-            // ✅ innerHTML so <strong> renders correctly
             document.getElementById('profilePicStatus').innerHTML = '<strong>Profile picture removed. Save to confirm.</strong>';
         });
     }

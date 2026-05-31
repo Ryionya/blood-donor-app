@@ -17,7 +17,7 @@ from accounts.models import User
 
 @login_required
 def apply_donor(request):
-        # Check if profile is complete
+    # Check if profile is complete
     profile = request.user.donor_profile
     if not profile.blood_type or not profile.government_id:
         messages.error(request, 'Please complete your profile first — blood type and government ID are required before applying.')
@@ -67,12 +67,13 @@ def apply_donor(request):
 def application_submitted(request):
     return render(request, 'donors/application_submitted.html')
 
+
 #Day 3
 @login_required
 @admin_required
 def admin_application_queue(request):
     applications = DonorApplication.objects.filter(
-        status='pending'
+        status__in=[DonorApplication.STATUS_PENDING, DonorApplication.STATUS_ID_RECHECK]
     ).select_related('donor').order_by('-submitted_at')
 
     return render(request, 'admin/application_queue.html', {
@@ -80,13 +81,14 @@ def admin_application_queue(request):
         'count': applications.count(),
     })
 
+
 @login_required
 @admin_required
 def admin_review_application(request, pk):
     application = get_object_or_404(DonorApplication, pk=pk)
 
     if request.method == 'POST':
-        action = request.POST.get('action')  # 'approve' or 'reject'
+        action = request.POST.get('action')
         note = request.POST.get('admin_note', '').strip()
         flag_user = request.POST.get('flag_user')
 
@@ -95,41 +97,80 @@ def admin_review_application(request, pk):
             application.donor.save()
             messages.warning(request, f"{application.donor.username} has been flagged for suspicious behavior.")
 
+        profile = application.donor.donor_profile
 
+        # ── ID RE-CHECK BRANCH ──────────────────────────────────────────────────
+        if application.is_id_recheck:
+            if action == 'approve':
+                application.status = DonorApplication.STATUS_APPROVED
+                application.admin_notes = note
+                application.reviewed_at = timezone.now()
+                application.save()
+
+                profile.is_verified = True
+                profile.id_recheck_pending = False
+                profile.save()
+
+                send_notification(
+                    user=application.donor,
+                    notif_type='id_recheck_approved',
+                    message='Your government ID has been re-verified. You are still a verified donor.'
+                )
+                messages.success(request, f"{application.donor.username}'s ID has been re-verified.")
+
+            elif action == 'reject':
+                if not note:
+                    messages.error(request, 'Please provide a rejection reason.')
+                    return redirect('review_application', pk=pk)
+
+                application.status = DonorApplication.STATUS_REJECTED
+                application.admin_notes = note
+                application.reviewed_at = timezone.now()
+                application.save()
+
+                # Keep is_verified=False and id_recheck_pending=True so donor must resubmit again
+                send_notification(
+                    user=application.donor,
+                    notif_type='id_recheck_rejected',
+                    message=f'Your government ID re-submission was not accepted. Reason: {note}'
+                )
+                messages.warning(request, f"{application.donor.username}'s ID re-check was rejected.")
+
+            return redirect('admin_application_queue')
+
+        # ── FRESH APPLICATION BRANCH ────────────────────────────────────────────
         if action == 'approve':
             application.status = DonorApplication.STATUS_APPROVED
             application.admin_notes = note
+            application.reviewed_at = timezone.now()
             application.save()
-            # Mark donor profile as verified
-            profile = application.donor.donor_profile
+
             profile.is_verified = True
+            profile.is_blood_type_locked = True
             profile.save()
 
             send_notification(
                 user=application.donor,
                 notif_type='approved',
-                message='Your donor application has been approved! '
-                        'You are now a verified donor.')
-
+                message='Your donor application has been approved! You are now a verified donor.'
+            )
             messages.success(request, f"{application.donor.username} has been approved.")
 
         elif action == 'reject':
             if not note:
-                messages.error(request, "Please provide a rejection reason.")
+                messages.error(request, 'Please provide a rejection reason.')
                 return redirect('review_application', pk=pk)
+
             application.status = DonorApplication.STATUS_REJECTED
             application.admin_notes = note
+            application.reviewed_at = timezone.now()
             application.save()
 
             send_notification(
                 user=application.donor,
                 notif_type='rejected',
-                message=f'Your donor application was not approved. '
-                        f'Reason: {note}'
+                message=f'Your donor application was not approved. Reason: {note}'
             )
-
-
-
             messages.warning(request, f"{application.donor.username} has been rejected.")
 
         return redirect('admin_application_queue')
@@ -138,15 +179,18 @@ def admin_review_application(request, pk):
         'application': application
     })
 
+
 @login_required
 @admin_required
 def admin_dashboard(request):
     recent_pending = DonorApplication.objects.filter(
-        status=DonorApplication.STATUS_PENDING
+        status__in=[DonorApplication.STATUS_PENDING, DonorApplication.STATUS_ID_RECHECK]  # ← include re-checks
     ).order_by("-submitted_at")[:3]
 
     context = {
-        "pending_count": DonorApplication.objects.filter(status=DonorApplication.STATUS_PENDING).count(),
+        "pending_count": DonorApplication.objects.filter(
+            status__in=[DonorApplication.STATUS_PENDING, DonorApplication.STATUS_ID_RECHECK]  # ← include re-checks
+        ).count(),
         "approved_count": DonorApplication.objects.filter(status=DonorApplication.STATUS_APPROVED).count(),
         "rejected_count": DonorApplication.objects.filter(status=DonorApplication.STATUS_REJECTED).count(),
         "total_users": User.objects.filter(role__in=['donor', 'recipient']).count(),
@@ -156,9 +200,9 @@ def admin_dashboard(request):
 
     return render(request, "admin/dashboard.html", context)
 
+
 @login_required
 def my_application(request):
-
     app = DonorApplication.objects.filter(
         donor=request.user
     ).order_by('-submitted_at').first()
@@ -167,9 +211,9 @@ def my_application(request):
         "app": app
     })
 
+
 @login_required
 def log_donation_view(request):
-    # Only verified donors can log a donation
     if request.user.role != 'donor':
         messages.error(request, 'Only donors can log a donation.')
         return redirect('home')
@@ -184,7 +228,6 @@ def log_donation_view(request):
         messages.error(request, 'Only verified donors can log a donation.')
         return redirect('home')
 
-    # Check if already on cooldown
     if profile.is_on_cooldown():
         messages.warning(request, f'You are currently on cooldown until {profile.cooldown_until.strftime("%B %d, %Y")}.')
         return redirect('cooldown_status')
@@ -202,6 +245,7 @@ def log_donation_view(request):
         'profile': profile,
     })
 
+
 @login_required
 def cooldown_status_view(request):
     if request.user.role != 'donor':
@@ -218,14 +262,12 @@ def cooldown_status_view(request):
         donor=request.user
     ).order_by('-donated_at')
 
-    # Auto-lift cooldown if it has expired
     if profile.cooldown_until and timezone.now() >= profile.cooldown_until:
         profile.is_available = True
         profile.cooldown_until = None
         profile.save()
         messages.info(request, 'Your cooldown has ended! You are now available again.')
 
-    # Calculate days remaining
     days_remaining = None
     if profile.is_on_cooldown():
         delta = profile.cooldown_until - timezone.now()
@@ -237,6 +279,7 @@ def cooldown_status_view(request):
         'days_remaining': days_remaining,
     })
 
+
 #Day 4
 @login_required
 def mark_notifications_read(request):
@@ -246,6 +289,7 @@ def mark_notifications_read(request):
     ).update(is_read=True)
     from django.http import JsonResponse
     return JsonResponse({'status': 'ok'})
+
 
 @login_required
 def notifications_page(request):
@@ -257,6 +301,7 @@ def notifications_page(request):
         'notifications': notifications,
     })
 
+
 @login_required
 def mark_single_notification_read(request, pk):
     notification = get_object_or_404(Notification, pk=pk, user=request.user)
@@ -264,6 +309,7 @@ def mark_single_notification_read(request, pk):
     notification.save()
     next_url = request.GET.get('next', '/my-application/')
     return redirect(next_url)
+
 
 @login_required
 @admin_required
@@ -296,6 +342,7 @@ def admin_stats(request):
     }
     return render(request, 'admin/stats.html', context)
 
+
 @login_required
 @admin_required
 def admin_request_queue(request):
@@ -307,6 +354,7 @@ def admin_request_queue(request):
         'requests': requests,
         'count': requests.count(),
     })
+
 
 @login_required
 @admin_required
@@ -322,14 +370,12 @@ def admin_review_request(request, pk):
             blood_request.admin_notes = note
             blood_request.save()
 
-            # Notify donor
             send_notification(
                 user=blood_request.donor,
                 notif_type='request',
                 message=f'{blood_request.recipient.get_full_name() or blood_request.recipient.username} sent you a blood donation request for {blood_request.hospital_name}.',
             )
 
-            # Push notification to donor
             try:
                 from webpush import send_user_notification
                 payload = {
@@ -342,7 +388,6 @@ def admin_review_request(request, pk):
             except Exception:
                 pass
 
-            # Notify recipient
             send_notification(
                 user=blood_request.recipient,
                 notif_type='request_approved',
@@ -374,6 +419,7 @@ def admin_review_request(request, pk):
         'blood_request': blood_request,
     })
 
+
 @login_required
 @admin_required
 def admin_user_list(request):
@@ -383,6 +429,7 @@ def admin_user_list(request):
         'total_donors': User.objects.filter(role='donor').count(),
         'total_recipients': User.objects.filter(role='recipient').count(),
     })
+
 
 @login_required
 @admin_required

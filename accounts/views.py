@@ -4,7 +4,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import RegisterForm, ProfileSetupForm, DonorProfileForm, RecipientProfileForm
-from donors.models import DonorProfile
+from donors.models import DonorProfile, DonorApplication
 from recipients.models import RecipientProfile
 
 
@@ -29,12 +29,10 @@ def register_view(request):
         form = RegisterForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
-            # Auto-create DonorProfile if registering as donor
             if user.role == 'donor':
                 DonorProfile.objects.create(user=user)
             elif user.role == 'recipient':
                 RecipientProfile.objects.create(user=user)
-            # Save profile picture
             user.profile_picture = form.cleaned_data['profile_picture']
             user.save()
             login(request, user)
@@ -54,11 +52,10 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
 
-            # Remember Me — 30 days
             if request.POST.get('remember_me'):
-                request.session.set_expiry(30 * 24 * 60 * 60)  # 30 days in seconds
+                request.session.set_expiry(30 * 24 * 60 * 60)
             else:
-                request.session.set_expiry(0)  # expires when browser closes
+                request.session.set_expiry(0)
                 
             messages.success(request, f'Welcome back, {user.first_name or user.username}!')
             if user.is_staff or user.is_superuser:
@@ -77,7 +74,6 @@ def profile_setup_view(request):
 
     donor_profile = getattr(user, 'donor_profile', None)
     recipient_profile = getattr(user, 'recipient_profile', None) if user.role == 'recipient' else None
-
 
     if request.method == 'POST':
         profile_form = ProfileSetupForm(
@@ -98,11 +94,10 @@ def profile_setup_view(request):
             instance=recipient_profile
         ) if recipient_profile else None
 
-
         # Handle profile picture removal
         if request.POST.get('remove_profile_picture') == '1':
             if user.profile_picture:
-                user.profile_picture.delete(save=False)  # deletes the file from storage
+                user.profile_picture.delete(save=False)
                 user.profile_picture = None
                 user.save()
             messages.success(request, 'Profile picture removed.')
@@ -126,11 +121,32 @@ def profile_setup_view(request):
 
         if donor_form and donor_form.is_valid():
             donor_instance = donor_form.save(commit=False)
-            if 'donor_government_id' in request.FILES:
-                donor_instance.government_id = request.FILES['donor_government_id']
-            # Don't overwrite blood type if donor is verified
-            if donor_profile and donor_profile.is_verified:
+
+            # ── BLOOD TYPE LOCK ─────────────────────────────────────────────────
+            # is_blood_type_locked stays True even when is_verified=False
+            # during re-verification, so blood type never becomes editable again
+            if donor_profile and donor_profile.is_blood_type_locked:
                 donor_instance.blood_type = donor_profile.blood_type
+
+            # ── GOV'T ID: trigger re-check if verified donor uploads a new ID ───
+            if 'donor_government_id' in request.FILES and donor_profile and donor_profile.is_blood_type_locked:
+                donor_instance.government_id = request.FILES['donor_government_id']
+                donor_instance.is_verified = False
+                donor_instance.id_recheck_pending = True
+
+                DonorApplication.objects.create(
+                    donor=request.user,
+                    government_id=request.FILES['donor_government_id'],
+                    status=DonorApplication.STATUS_ID_RECHECK,
+                    is_id_recheck=True,
+                )
+
+                messages.info(request, 'Your new government ID has been submitted for re-verification.')
+
+            elif 'donor_government_id' in request.FILES:
+                # Unverified donor — free upload, no re-check needed
+                donor_instance.government_id = request.FILES['donor_government_id']
+
             donor_instance.save()
 
         if recipient_form and recipient_form.is_valid():
@@ -159,6 +175,7 @@ def profile_setup_view(request):
         'profile_form': profile_form,
         'donor_form': donor_form,
         'recipient_form': recipient_form,
+        'donor_profile': donor_profile,
     })
 
 

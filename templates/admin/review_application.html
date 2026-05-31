@@ -21,7 +21,7 @@
   <div class="card mt-3">
     <div class="card-body">
 
-       <div class="d-flex align-items-center gap-3 mb-3">
+      <div class="d-flex align-items-center gap-3 mb-3">
         <a href="{% if application.donor.profile_picture %}{{ application.donor.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ application.donor.first_name|default:application.donor.username }}+{{ application.donor.last_name }}&background=C0392B&color=fff&size=128{% endif %}" target="_blank">
           <img
             src="{% if application.donor.profile_picture %}{{ application.donor.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ application.donor.first_name|default:application.donor.username }}+{{ application.donor.last_name }}&background=C0392B&color=fff&size=128{% endif %}"
@@ -29,10 +29,17 @@
             style="width:70px; height:70px; object-fit:cover; cursor:pointer;">
         </a>
         <div>
-          <h5 class="mb-0 fw-bold">{{ application.donor.get_full_name|default:application.donor.username }}</h5>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h5 class="mb-0 fw-bold">{{ application.donor.get_full_name|default:application.donor.username }}</h5>
+            {% if application.is_id_recheck %}
+              <span class="badge bg-info text-dark">ID Re-check</span>
+            {% else %}
+              <span class="badge bg-secondary">New Application</span>
+            {% endif %}
+          </div>
           <small class="text-muted">@{{ application.donor.username }}</small>
           <small class="text-muted d-block mt-1" style="font-size:11px;">
-          <i class="fa-solid fa-up-right-from-square me-1"></i>Click photo to view full size
+            <i class="fa-solid fa-up-right-from-square me-1"></i>Click photo to view full size
           </small>
         </div>
       </div>
@@ -51,7 +58,7 @@
         <i class="fa-solid fa-clipboard-check text-danger me-2"></i>Document Verification Guide
       </h6>
       <div class="row g-3">
-        <div class="col-md-6">
+        <div class="{% if application.is_id_recheck %}col-md-12{% else %}col-md-6{% endif %}">
           <div class="d-flex gap-2">
             <i class="fa-solid fa-id-card text-danger mt-1"></i>
             <div>
@@ -65,6 +72,7 @@
             </div>
           </div>
         </div>
+        {% if not application.is_id_recheck %}
         <div class="col-md-6">
           <div class="d-flex gap-2">
             <i class="fa-solid fa-file-medical text-danger mt-1"></i>
@@ -79,6 +87,7 @@
             </div>
           </div>
         </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -86,7 +95,7 @@
   <div class="mt-3 mb-4">
     <h5>Uploaded Documents</h5>
     <div class="row g-3 mt-1">
-      <div class="col-md-6">
+      <div class="{% if application.is_id_recheck %}col-md-12{% else %}col-md-6{% endif %}">
         <p class="fw-bold mb-1">Government ID</p>
         {% if application.government_id %}
           {% with name=application.government_id.name %}
@@ -109,6 +118,7 @@
         {% endif %}
       </div>
 
+      {% if not application.is_id_recheck %}
       <div class="col-md-6">
         <p class="fw-bold mb-1">Medical Certificate</p>
         {% if application.medical_certificate %}
@@ -131,14 +141,15 @@
           <p class="text-muted">Not uploaded</p>
         {% endif %}
       </div>
+      {% endif %}
+
     </div>
   </div>
 
   <form method="POST" class="mt-4">
     {% csrf_token %}
 
-    {% if application.status == 'pending' %}
-    <!-- Flag User -->
+    {% if application.status == 'pending' or application.status == 'id_recheck' %}
     <div class="card border-warning mb-3">
       <div class="card-body py-2 px-3">
         <div class="form-check mb-0">
@@ -150,7 +161,6 @@
       </div>
     </div>
 
-    <!-- Admin Notes -->
     <div class="mb-3">
       <label class="form-label fw-bold">Admin Notes / Rejection Reason</label>
       <p class="text-muted mb-2" style="font-size:13px;">
@@ -161,6 +171,7 @@
           data-text="The face on the Government ID is not clearly visible. Please resubmit with a clearer photo.">
           🪪 Unclear ID photo
         </button>
+        {% if not application.is_id_recheck %}
         <button type="button" class="btn btn-outline-secondary btn-sm template-btn"
           data-text="The blood type on the Medical Certificate does not match the declared blood type. Please resubmit the correct document.">
           🩸 Blood type mismatch
@@ -169,6 +180,7 @@
           data-text="The Medical Certificate appears to be expired or older than 1 year. Please provide a recent certificate.">
           📅 Expired medical cert
         </button>
+        {% endif %}
         <button type="button" class="btn btn-outline-secondary btn-sm template-btn"
           data-text="The submitted documents are blurry or unreadable. Please resubmit clearer copies.">
           🔍 Unreadable documents
@@ -184,19 +196,19 @@
     {% endif %}
 
     <div class="d-flex gap-2">
-        {% if application.status == 'pending' %}
-            <button type="submit" name="action" value="approve" class="btn btn-success">
-                <i class="fa-solid fa-check me-1"></i> Approve
-            </button>
-            <button type="submit" name="action" value="reject" class="btn btn-danger">
-                <i class="fa-solid fa-x me-1"></i> Reject
-            </button>
-        {% else %}
-            <div class="alert alert-{% if application.status == 'approved' %}success{% else %}danger{% endif %} mb-0 w-100">
-                This application has already been 
-                <strong>{{ application.get_status_display }}</strong>.
-            </div>
-        {% endif %}
+      {% if application.status == 'pending' or application.status == 'id_recheck' %}
+        <button type="submit" name="action" value="approve" class="btn btn-success">
+          <i class="fa-solid fa-check me-1"></i> Approve
+        </button>
+        <button type="submit" name="action" value="reject" class="btn btn-danger">
+          <i class="fa-solid fa-x me-1"></i> Reject
+        </button>
+      {% else %}
+        <div class="alert alert-{% if application.status == 'approved' %}success{% else %}danger{% endif %} mb-0 w-100">
+          This application has already been
+          <strong>{{ application.get_status_display }}</strong>.
+        </div>
+      {% endif %}
     </div>
   </form>
 </div>
