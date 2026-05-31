@@ -20,38 +20,76 @@ import os
 
 
 # ─────────────────────────────────────────────
+#  COMPATIBILITY MATRIX
+# ─────────────────────────────────────────────
+
+COMPATIBLE_DONORS = {
+    'A+':  ['A+', 'A-', 'O+', 'O-'],
+    'A-':  ['A-', 'O-'],
+    'B+':  ['B+', 'B-', 'O+', 'O-'],
+    'B-':  ['B-', 'O-'],
+    'AB+': ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+    'AB-': ['A-', 'B-', 'AB-', 'O-'],
+    'O+':  ['O+', 'O-'],
+    'O-':  ['O-'],
+}
+
+# ─────────────────────────────────────────────
 #  BROWSE / SEARCH PAGE
 # ─────────────────────────────────────────────
 
 @login_required
 def browse_donors_view(request):
     blood_type = request.GET.get('blood_type', '')
-    location = request.GET.get('location', '')
+    location   = request.GET.get('location', '')
 
+    # ── Auto-detect the logged-in user's blood type ───────────────────
+    # Works for both donors and recipients since either can need blood.
+    # We check DonorProfile first, then RecipientProfile as fallback.
+    user_blood_type = ''
+    try:
+        user_blood_type = request.user.donor_profile.blood_type or ''
+    except Exception:
+        pass
+
+    if not user_blood_type:
+        try:
+            user_blood_type = request.user.recipient_profile.blood_type or ''
+        except Exception:
+            pass
+
+    # ── Base queryset ─────────────────────────────────────────────────
     donors = DonorProfile.objects.filter(
         is_verified=True,
         is_available=True,
     ).exclude(user=request.user).select_related('user')
 
-    if blood_type:
-        donors = donors.filter(blood_type=blood_type)
+    # ── Blood type compatibility filter ───────────────────────────────
+    # 'search_blood_type' ang gagamitin sa filter query at AI recommendation.
+    # Kapag walang pinili sa filter UI, gagamitin ang user_blood_type para tugma pa rin ang listahan at AI.
+    search_blood_type = blood_type or user_blood_type
 
+    if search_blood_type:
+        compatible_types = COMPATIBLE_DONORS.get(search_blood_type, [search_blood_type])
+        donors = donors.filter(blood_type__in=compatible_types)
+
+    # ── Location filter ───────────────────────────────────────────────
     if location:
-        donors = donors.filter(user__location__icontains=location)
+        donors = donors.filter(location__icontains=location)
 
-    # AI Recommendation
+    # ── AI Recommendation ─────────────────────────────────────────────
     ai_recommendation = None
-    if donors.exists() and (blood_type or location):
+    if donors.exists() and (search_blood_type or location):
         try:
             ai_recommendation = get_donor_recommendation(
                 donors=list(donors),
-                blood_type_needed=blood_type,
+                blood_type_needed=search_blood_type,
                 location=location
             )
         except Exception:
             pass
 
-    # Load Philippine cities for dropdown
+    # ── Philippine cities for dropdown ────────────────────────────────
     try:
         cities_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'ph_cities.json')
         with open(cities_path, 'r') as f:
@@ -62,27 +100,24 @@ def browse_donors_view(request):
     blood_type_choices = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
     return render(request, 'recipients/browse.html', {
-        'donors': donors,
-        'blood_type_choices': blood_type_choices,
-        'selected_blood_type': blood_type,
-        'selected_location': location,
-        'ph_cities': ph_cities,
-        'ai_recommendation': ai_recommendation,
+        'donors':              donors,
+        'blood_type_choices':  blood_type_choices,
+        'selected_blood_type': blood_type,         # Blanko ('') para "All Blood Types" ang dropdown selection sa screen
+        'display_blood_type':  search_blood_type,  # Ipapadala ito para sa red banner/badge na nagpapakita ng hinahanap na blood type
+        'selected_location':   location,
+        'ph_cities':           ph_cities,
+        'ai_recommendation':   ai_recommendation,
+        'result_count':        donors.count(),
+        'user_blood_type':     user_blood_type,
     })
- 
+
+
 # ─────────────────────────────────────────────
 #  LOCATION LIST — JSON endpoint for voice parser
 # ─────────────────────────────────────────────
 
 @login_required
 def location_list_view(request):
-    """
-    Returns all distinct non-empty locations stored in DonorProfile as JSON.
-    The voice parser fetches this on page load so it can fuzzy-match
-    spoken city names against real data instead of guessing free text.
-
-    Response: { "locations": ["Calamba", "Santa Rosa", "Biñan", ...] }
-    """
     locations = (
         DonorProfile.objects
         .exclude(location__isnull=True)
@@ -157,21 +192,41 @@ def send_request_view(request, donor_id):
         return redirect('donor_profile', donor_id=donor_id)
 
     if request.method == 'POST':
-        hospital_name = request.POST.get('hospital_name', '').strip()
-        urgency       = request.POST.get('urgency', 'medium')
-        message       = request.POST.get('message', '').strip()
-        medical_cert  = request.FILES.get('medical_certificate')
+        hospital_name  = request.POST.get('hospital_name', '').strip()
+        needed_by_date = request.POST.get('needed_by_date', '').strip()
+        blood_bags     = request.POST.get('blood_bags', '1').strip()
+        message        = request.POST.get('message', '').strip()
+        medical_cert   = request.FILES.get('medical_certificate')
 
-        if not hospital_name or not message:
-            messages.error(request, 'Please fill in all fields.')
+        # Validate
+        if not hospital_name or not message or not needed_by_date:
+            messages.error(request, 'Please fill in all required fields.')
         elif not medical_cert:
             messages.error(request, 'Please attach a medical certificate.')
         else:
+            from datetime import date as date_type
+            try:
+                needed_by = date_type.fromisoformat(needed_by_date)
+                if needed_by < date_type.today():
+                    messages.error(request, 'Needed-by date cannot be in the past.')
+                    return render(request, 'recipients/send_request.html', {'donor': donor})
+            except ValueError:
+                messages.error(request, 'Invalid date format.')
+                return render(request, 'recipients/send_request.html', {'donor': donor})
+
+            try:
+                bags = int(blood_bags)
+                if bags < 1:
+                    raise ValueError
+            except ValueError:
+                bags = 1
+
             blood_request = BloodRequest.objects.create(
                 recipient=request.user,
                 donor=donor.user,
                 hospital_name=hospital_name,
-                urgency=urgency,
+                needed_by_date=needed_by,
+                blood_bags=bags,
                 message=message,
                 medical_certificate=medical_cert,
                 status='pending_admin',
@@ -197,16 +252,8 @@ def send_request_view(request, donor_id):
             messages.success(request, 'Request sent successfully!')
             return redirect('my_requests')
 
-    urgency_choices = [
-        ('low',      'Low — Scheduled donation'),
-        ('medium',   'Medium — Needed soon'),
-        ('high',     'High — Urgent'),
-        ('critical', 'Critical — Emergency'),
-    ]
-
     return render(request, 'recipients/send_request.html', {
-        'donor':           donor,
-        'urgency_choices': urgency_choices,
+        'donor': donor,
     })
 
 
@@ -257,7 +304,6 @@ def respond_request_view(request, request_id):
             blood_request.save()
             messages.success(request, 'You accepted the donation request.')
 
-            # Push notification to recipient
             try:
                 payload = {
                     'head': '✅ Donation Request Accepted!',
@@ -269,7 +315,6 @@ def respond_request_view(request, request_id):
             except Exception:
                 pass
 
-            # In-app notification for recipient
             Notification.objects.create(
                 user=blood_request.recipient,
                 notif_type='accepted',
@@ -282,7 +327,6 @@ def respond_request_view(request, request_id):
             blood_request.save()
             messages.info(request, 'You declined the donation request.')
 
-            # Push notification to recipient
             try:
                 payload = {
                     'head': '❌ Donation Request Declined',
@@ -294,7 +338,6 @@ def respond_request_view(request, request_id):
             except Exception:
                 pass
 
-            # In-app notification for recipient
             Notification.objects.create(
                 user=blood_request.recipient,
                 notif_type='rejected',
@@ -303,8 +346,9 @@ def respond_request_view(request, request_id):
 
     return redirect('incoming_requests')
 
+
 # ─────────────────────────────────────────────
-#  Voice Intent API View
+#  VOICE INTENT API VIEW
 # ─────────────────────────────────────────────
 
 @login_required
@@ -324,7 +368,6 @@ def voice_intent_view(request):
             active_role=request.user.active_role
         )
 
-        # If navigation intent, resolve the URL
         if intent.get('type') == 'navigate':
             page = intent.get('page')
             try:
@@ -333,7 +376,6 @@ def voice_intent_view(request):
             except Exception:
                 intent['type'] = 'unknown'
 
-        # If logout intent
         if intent.get('type') == 'logout':
             intent['url'] = reverse('logout')
 
@@ -342,7 +384,7 @@ def voice_intent_view(request):
     except Exception as e:
         return JsonResponse({'type': 'unknown'})
 
-    
+
 def ph_cities_view(request):
     try:
         cities_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'ph_cities.json')
@@ -351,4 +393,3 @@ def ph_cities_view(request):
         return JsonResponse(data)
     except Exception:
         return JsonResponse({'cities': []})
-    

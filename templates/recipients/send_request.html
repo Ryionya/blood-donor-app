@@ -12,7 +12,6 @@
 
     <div class="card shadow border-0">
 
-      <!-- Header -->
       <div class="card-header bg-danger text-white py-3">
         <h5 class="mb-0 fw-bold">🩸 Send Donation Request</h5>
         <p class="mb-0 small opacity-75">
@@ -41,35 +40,40 @@
             >
           </div>
 
-          <!-- Urgency level -->
-          <div class="mb-3">
-            <label class="form-label fw-semibold">
-              Urgency Level <span class="text-danger">*</span>
-            </label>
-            <div class="row g-2">
-              {% for value, label in urgency_choices %}
-              <div class="col-6">
-                <input
-                  type="radio"
-                  class="btn-check"
-                  name="urgency"
-                  id="urgency-{{ value }}"
-                  value="{{ value }}"
-                  {% if value == 'medium' %}checked{% endif %}
-                  required
-                >
-                <label
-                  class="btn btn-outline-secondary w-100 text-start"
-                  for="urgency-{{ value }}"
-                >
-                  {% if value == 'low' %}🟢
-                  {% elif value == 'medium' %}🟡
-                  {% elif value == 'high' %}🟠
-                  {% else %}🔴{% endif %}
-                  {{ label }}
-                </label>
+          <!-- Needed-by date + Blood bags -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-7">
+              <label class="form-label fw-semibold">
+                Date Needed By <span class="text-danger">*</span>
+              </label>
+              <input
+                type="date"
+                name="needed_by_date"
+                class="form-control"
+                id="needed_by_date"
+                required
+              >
+              <div class="form-text text-muted">
+                Urgency is determined automatically from this date.
               </div>
-              {% endfor %}
+              <div id="urgency-indicator" class="mt-2 d-none">
+                <span class="badge fs-6" id="urgency-badge"></span>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label fw-semibold">
+                Blood Bags Needed <span class="text-danger">*</span>
+              </label>
+              <input
+                type="number"
+                name="blood_bags"
+                class="form-control"
+                min="1"
+                max="20"
+                value="1"
+                required
+              >
+              <div class="form-text text-muted">How many units?</div>
             </div>
           </div>
 
@@ -124,4 +128,45 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dateInput = document.getElementById('needed_by_date');
+const today = new Date().toISOString().split('T')[0];
+dateInput.setAttribute('min', today);
+
+dateInput.addEventListener('change', function () {
+  const indicator = document.getElementById('urgency-indicator');
+  const badge     = document.getElementById('urgency-badge');
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  const selected  = new Date(this.value);
+  const daysLeft  = Math.round((selected - todayDate) / (1000 * 60 * 60 * 24));
+
+  if (!this.value) {
+    indicator.classList.add('d-none');
+    return;
+  }
+
+  let label, classes;
+  if (daysLeft <= 1) {
+    label = '🔴 Critical — Emergency';
+    classes = 'badge bg-danger';
+  } else if (daysLeft <= 3) {
+    label = '🟠 High — Urgent';
+    classes = 'badge bg-warning text-dark';
+  } else if (daysLeft <= 7) {
+    label = '🟡 Medium — Needed soon';
+    classes = 'badge bg-info text-dark';
+  } else {
+    label = '🟢 Low — Scheduled donation';
+    classes = 'badge bg-success';
+  }
+
+  badge.textContent = label;
+  badge.className   = classes + ' fs-6';
+  indicator.classList.remove('d-none');
+});
+</script>
 {% endblock %}
