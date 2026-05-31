@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load donor_tags %}
 {% block title %}Find a Donor — BloodLink{% endblock %}
 
 {% block content %}
@@ -20,41 +21,44 @@
 
 <div class="card shadow-sm mb-4">
   <div class="card-body">
-    <form method="GET" id="search-form" class="row g-3 align-items-end">
+    <form method="GET" id="search-form">
+      <div class="d-flex flex-wrap gap-3 align-items-end">
 
-      <div class="col-md-3">
-        <label class="form-label fw-semibold">Blood Type</label>
-        <select name="blood_type" id="blood-type-select" class="form-select">
-          <option value="">All Blood Types</option>
-          {% for bt in blood_type_choices %}
-            <option value="{{ bt }}" {% if selected_blood_type == bt %}selected{% endif %}>
-              {{ bt }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
+        <div style="min-width: 160px; flex: 1 1 160px;">
+          <label class="form-label fw-semibold mb-1">Blood Type</label>
+          <select name="blood_type" id="blood-type-select" class="form-select">
+            <option value="">All Blood Types</option>
+            {% for bt in blood_type_choices %}
+              <option value="{{ bt }}" {% if selected_blood_type == bt %}selected{% endif %}>
+                {{ bt }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
 
-      <div class="col-md-6">
-          <label class="form-label fw-semibold">Location</label>
-          <select name="location" 
+        <div style="min-width: 220px; flex: 3 1 220px;">
+          <label class="form-label fw-semibold mb-1">Location</label>
+          <select name="location"
                   id="location-input"
                   class="form-select select2-city"
                   data-placeholder="Search city or municipality...">
-              <option value="">All Locations</option>
-              {% for city in ph_cities %}
-                  <option value="{{ city }}" {% if selected_location == city %}selected{% endif %}>
-                      {{ city }}
-                  </option>
-              {% endfor %}
+            <option value="">All Locations</option>
+            {% for city in ph_cities %}
+              <option value="{{ city }}" {% if selected_location == city %}selected{% endif %}>
+                {{ city }}
+              </option>
+            {% endfor %}
           </select>
-      </div>
+        </div>
 
-      <div class="col-md-3 d-grid gap-2 d-md-flex">
-        <button type="submit" class="btn btn-danger flex-fill">Search</button>
         {% if selected_blood_type or selected_location %}
-          <a href="{% url 'browse_donors' %}" class="btn btn-outline-secondary">✕ Clear</a>
+          <div style="flex: 0 0 auto;">
+            <a href="{% url 'browse_donors' %}" class="btn btn-outline-secondary">✕ Clear Filters</a>
+          </div>
         {% endif %}
+
       </div>
+    </form>
 
     </form>
   </div>
@@ -128,10 +132,10 @@
 
         <div class="card-body text-center">
           <div
-            class="rounded-circle bg-danger text-white d-inline-flex align-items-center justify-content-center mb-3"
-            style="width:64px;height:64px;font-size:1.5rem;"
+            class="rounded-circle bg-white d-inline-flex align-items-center justify-content-center mb-3"
+            style="width:64px;height:64px;border:2px solid #f0f0f0;box-shadow:0 2px 8px rgba(0,0,0,0.08);"
           >
-            {{ donor.user.get_full_name|default:donor.user.username|first|upper }}
+            <i class="fa-solid fa-heart-pulse" style="font-size:1.6rem;color:{{ donor.user.id|avatar_color }};"></i>
           </div>
           <h5 class="fw-bold mb-1">
             {{ donor.user.username }}
@@ -370,6 +374,16 @@ $(document).ready(function() {
         placeholder: 'Search city or municipality...',
         allowClear: true,
         width: '100%',
+    });
+
+    // Auto-submit on blood type change
+    $('#blood-type-select').on('change', function() {
+        $('#search-form').submit();
+    });
+
+    // Auto-submit on location change
+    $('#location-input').on('change', function() {
+        $('#search-form').submit();
     });
 });
 </script>

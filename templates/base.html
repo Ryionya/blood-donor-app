@@ -266,7 +266,7 @@
 
         <!-- Django messages (flash alerts) -->
         {% if messages %}
-          <div class="container mt-3">
+          <div class="container mt-3" id="django-messages">
             {% for message in messages %}
               <div
                 class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show"
@@ -277,6 +277,14 @@
               </div>
             {% endfor %}
           </div>
+          <script>
+            setTimeout(function () {
+              document.querySelectorAll('#django-messages .alert').forEach(function (el) {
+                el.classList.remove('show');
+                setTimeout(function () { el.remove(); }, 300);
+              });
+            }, 4000);
+          </script>
         {% endif %}
 
         <main class="container mt-4 pb-5">
