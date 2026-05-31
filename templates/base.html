@@ -408,8 +408,18 @@
 
         let isListening = false;
 
+        // ── Text-to-Speech ──────────────────────────────────────
+        function speak(text, lang='en-US') {
+            window.speechSynthesis.cancel(); // stop any ongoing speech
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang  = lang;
+            utterance.rate  = 1.0;
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+        // ────────────────────────────────────────────────────────
+
         function showToast(msg, type='success') {
-            // Remove existing toast
             const existing = document.getElementById('voice-toast');
             if (existing) existing.remove();
 
@@ -431,13 +441,25 @@
         }
 
         btn.addEventListener('click', () => {
+            window.speechSynthesis.cancel();
             if (isListening) {
                 recognition.stop();
                 return;
             }
+            
             setListening(true);
             showToast('🎙️ Listening… speak in Filipino or English', 'info');
-            try { recognition.start(); } catch(e) { setListening(false); }
+            
+            // Start mic ONLY after speech finishes
+            const utterance = new SpeechSynthesisUtterance('Listening. Please speak your command.');
+            utterance.lang  = 'en-US';
+            utterance.rate  = 1.0;
+            utterance.pitch = 1.0;
+            utterance.onend = function() {
+                // Speech finished — now start the mic
+                try { recognition.start(); } catch(e) { setListening(false); }
+            };
+            window.speechSynthesis.speak(utterance);
         });
 
         recognition.onresult = async function(event) {
@@ -458,68 +480,84 @@
 
                 const intent = await response.json();
                 console.log('Intent:', intent);
-                
+
                 if (intent.type === 'navigate' && intent.page === 'switch_role') {
                     showToast('🔄 Switching role…', 'info');
-                    setTimeout(() => window.location.href = "{% url 'switch_role' %}", 1000);
+                    speak('Switching role.', 'en-US');
+                    setTimeout(() => window.location.href = "{% url 'switch_role' %}", 3500);
 
                 } else if (intent.type === 'navigate' && intent.url) {
-                    showToast(`✅ Going to <strong>${intent.page.replace(/_/g, ' ')}</strong>…`, 'success');
-                    setTimeout(() => window.location.href = intent.url, 1000);
+                    const pageName = intent.page.replace(/_/g, ' ');
+                    showToast(`✅ Going to <strong>${pageName}</strong>…`, 'success');
+                    speak(`Going to ${pageName}.`, 'en-US');
+                    setTimeout(() => window.location.href = intent.url, 3500);
 
                 } else if (intent.type === 'logout') {
                     showToast('👋 Logging out…', 'info');
+                    speak('Logging out. Goodbye!', 'en-US');
                     setTimeout(() => {
                         const form = document.querySelector('form[action*="logout"]');
                         if (form) form.submit();
                         else window.location.href = '/logout/';
-                    }, 1000);
+                    }, 3500);
 
                 } else if (intent.type === 'search') {
-                    // If on browse page, fill in the filters
-                    const btSelect  = document.getElementById('blood-type-select');
-                    const locInput  = document.getElementById('location-input');
+                    const btSelect   = document.getElementById('blood-type-select');
+                    const locInput   = document.getElementById('location-input');
                     const searchForm = document.getElementById('search-form');
 
                     if (btSelect && locInput && searchForm) {
                         if (intent.blood_type) btSelect.value = intent.blood_type;
-                        
+
                         if (intent.location) {
-                          if (locInput.tagName === 'SELECT') {
-                              const search = intent.location.toLowerCase().trim();
-                              const options = Array.from(locInput.options);
-                              
-                              // Try multiple matching strategies
-                              const match = options.find(o => {
-                                  if (!o.value) return false;
-                                  const val = o.value.toLowerCase()
-                                      .replace('city of ', '')
-                                      .replace('municipality of ', '')
-                                      .trim();
-                                  return val === search || 
-                                        val.includes(search) || 
-                                        search.includes(val);
-                              });
-                              
-                              if (match) {
-                                  locInput.value = match.value;
-                                  if (typeof $ !== 'undefined') $(locInput).trigger('change');
-                              }
-                          } else {
-                              locInput.value = intent.location;
-                          }
+                            if (locInput.tagName === 'SELECT') {
+                                const search = intent.location.toLowerCase().trim();
+                                const options = Array.from(locInput.options);
+                                const match = options.find(o => {
+                                    if (!o.value) return false;
+                                    const val = o.value.toLowerCase()
+                                        .replace('city of ', '')
+                                        .replace('municipality of ', '')
+                                        .trim();
+                                    return val === search ||
+                                          val.includes(search) ||
+                                          search.includes(val);
+                                });
+                                if (match) {
+                                    locInput.value = match.value;
+                                    if (typeof $ !== 'undefined') $(locInput).trigger('change');
+                                }
+                            } else {
+                                locInput.value = intent.location;
+                            }
                         }
 
-                        showToast(`🔍 Searching for <strong>${intent.blood_type || 'any'}</strong> donors in <strong>${intent.location || 'any location'}</strong>…`, 'success');
-                        setTimeout(() => searchForm.submit(), 1000);
+                        const bloodTypeText = intent.blood_type || 'any blood type';
+                        const locationText  = intent.location   || 'all locations';
+                        showToast(`🔍 Searching for <strong>${bloodTypeText}</strong> donors in <strong>${locationText}</strong>…`, 'success');
+                        speak(`Searching for ${bloodTypeText} donors in ${locationText}.`, 'en-US');
+                        setTimeout(() => searchForm.submit(), 3500);
+
+                    } else {
+                        // Not on browse page — navigate there with params
+                        let url = "{% url 'browse_donors' %}?";
+                        if (intent.blood_type) url += `blood_type=${encodeURIComponent(intent.blood_type)}&`;
+                        if (intent.location)   url += `location=${encodeURIComponent(intent.location)}`;
+                        const bloodTypeText = intent.blood_type || 'donors';
+                        const locationText  = intent.location   || 'all locations';
+                        showToast(`🔍 Finding donors…`, 'success');
+                        speak(`Finding ${bloodTypeText} donors in ${locationText}.`, 'en-US');
+                        setTimeout(() => window.location.href = url, 3500);
                     }
 
                 } else {
                     showToast('⚠️ Command not recognized. Try: <em>"Go to browse page"</em> or <em>"Find A+ in Calamba"</em>', 'warning');
+                    speak('Command not recognized. Please try again.', 'en-US');
                 }
 
             } catch(err) {
                 showToast('⚠️ Could not process command. Please try again.', 'warning');
+                speak('Sorry, could not process your command. Please try again.', 'en-US');
             }
         };
 
@@ -531,7 +569,13 @@
                 'network':       '🎙️ Network error during voice recognition.',
                 'audio-capture': '🎙️ Microphone not found.',
             };
+            const errorTexts = {
+                'no-speech':   'No speech detected. Please try again.',
+                'not-allowed': 'Microphone permission denied.',
+                'network':     'Network error during voice recognition.',
+            };
             showToast(msgs[event.error] || `⚠️ Error: ${event.error}`, 'warning');
+            speak(errorTexts[event.error] || 'An error occurred. Please try again.', 'en-US');
         };
 
         recognition.onend = function() {
