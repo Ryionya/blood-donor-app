@@ -18,6 +18,7 @@ class DonorProfile(models.Model):
     cooldown_until = models.DateTimeField(null=True, blank=True)
     bio = models.TextField(blank=True)
     location = models.CharField(max_length=255, blank=True, null=True)
+    government_id = models.FileField(upload_to='donor/ids/', blank=True, null=True)
 
     def is_on_cooldown(self):
         if self.cooldown_until and timezone.now() < self.cooldown_until:
@@ -39,7 +40,6 @@ class DonorApplication(models.Model):
         (STATUS_REJECTED, "Rejected"),
     ]
     donor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='applications')
-    government_id = models.FileField(upload_to='applications/ids/')
     medical_certificate = models.FileField(upload_to='applications/certs/')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     admin_notes = models.TextField(blank=True)

@@ -22,10 +22,14 @@
         <div class="donor-avatar d-inline-flex align-items-center justify-content-center mb-2">
           {{ donor.user.get_full_name|default:donor.user.username|first|upper }}
         </div>
-        <h4 class="donor-name mb-0 fw-bold">
-          {{ donor.user.get_full_name|default:donor.user.username }}
-          <span class="text-warning" title="Verified Donor">✔</span>
-        </h4>
+          <h4 class="donor-name mb-0 fw-bold">
+            {% if accepted_request %}
+              {{ donor.user.get_full_name|default:donor.user.username }}
+            {% else %}
+              {{ donor.user.username }}
+            {% endif %}
+            <span class="text-warning" title="Verified Donor">✔</span>
+          </h4>
         <div class="mt-2">
           <span class="blood-type-badge">{{ donor.blood_type }}</span>
         </div>

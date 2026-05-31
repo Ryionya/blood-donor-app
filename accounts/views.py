@@ -76,7 +76,8 @@ def profile_setup_view(request):
     user = request.user
 
     donor_profile = getattr(user, 'donor_profile', None)
-    recipient_profile = getattr(user, 'recipient_profile', None)
+    recipient_profile = getattr(user, 'recipient_profile', None) if user.role == 'recipient' else None
+
 
     if request.method == 'POST':
         profile_form = ProfileSetupForm(
@@ -87,6 +88,7 @@ def profile_setup_view(request):
 
         donor_form = DonorProfileForm(
             request.POST,
+            request.FILES,
             instance=donor_profile
         ) if donor_profile else None
 
@@ -119,7 +121,6 @@ def profile_setup_view(request):
                 return redirect('profile_setup')
 
         profile_form = ProfileSetupForm(request.POST, request.FILES, instance=user)
-        donor_form = DonorProfileForm(request.POST, instance=donor_profile) if donor_profile else None
         if profile_form.is_valid():
             profile_form.save()
 

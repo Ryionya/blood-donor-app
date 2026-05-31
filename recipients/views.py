@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from accounts.models import User
 from donors.models import DonorProfile, Notification
-from recipients.models import BloodRequest
+from recipients.models import BloodRequest, RecipientProfile
 from webpush import send_user_notification
 
 import json
@@ -16,6 +16,8 @@ from django.urls import reverse
 import json as json_module
 from django.conf import settings
 import os
+
+
 
 # ─────────────────────────────────────────────
 #  BROWSE / SEARCH PAGE
@@ -133,15 +135,21 @@ def send_request_view(request, donor_id):
         messages.error(request, 'You cannot send a request to yourself.')
         return redirect('browse_donors')
 
-    # Check if recipient has uploaded a government ID
-    if not request.user.recipient_profile.government_id:
+    # Check government ID
+    recipient_profile, created = RecipientProfile.objects.get_or_create(user=request.user)
+    if request.user.role == 'donor':
+        has_gov_id = bool(request.user.donor_profile.government_id)
+    else:
+        has_gov_id = bool(recipient_profile.government_id)
+
+    if not has_gov_id:
         messages.error(request, 'You must upload a Government ID in your profile before sending a blood request.')
         return redirect('profile_setup')
 
     existing = BloodRequest.objects.filter(
         recipient=request.user,
         donor=donor.user,
-        status='pending',
+        status__in=['pending_admin', 'pending'],
     ).exists()
 
     if existing:
@@ -343,3 +351,4 @@ def ph_cities_view(request):
         return JsonResponse(data)
     except Exception:
         return JsonResponse({'cities': []})
+    

@@ -3,10 +3,10 @@
   <h2>Donor Application</h2>
   <p class="text-muted">Fill out this form to apply as a verified donor.</p>
 
-  <!-- Review Profile Section -->
+ <!-- Review Profile Section -->
   <div class="card border-0 bg-light rounded-3 p-3 mb-4">
     <h6 class="fw-semibold text-muted text-uppercase mb-3">Review Profile</h6>
-    <div class="d-flex align-items-center gap-3">
+    <div class="d-flex align-items-center gap-3 mb-3">
       <img
         src="{% if request.user.profile_picture %}{{ request.user.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ request.user.first_name|default:request.user.username }}+{{ request.user.last_name }}&background=C0392B&color=fff&size=128{% endif %}"
         class="rounded-circle border border-2 border-danger"
@@ -22,10 +22,27 @@
         </p>
       </div>
     </div>
+
+  <!-- Government ID -->
+    <div class="mb-2">
+      <p class="fw-semibold mb-1" style="font-size:14px;">Government ID</p>
+      {% if request.user.donor_profile.government_id %}
+        <a href="{{ request.user.donor_profile.government_id.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+          <i class="fa-solid fa-file me-1"></i> View Government ID
+        </a>
+      {% else %}
+        <small class="text-danger">
+          <i class="fa-solid fa-triangle-exclamation me-1"></i>
+          No Government ID uploaded. Please go to 
+          <a href="{% url 'profile_setup' %}">My Profile</a> to upload one before applying.
+        </small>
+      {% endif %}
+    </div>
+
     <small class="text-muted mt-2 d-block">
       <i class="fa-solid fa-circle-info me-1"></i>
       Go to <a href="{% url 'profile_setup' %}">My Profile</a> to change your
-      profile picture or blood type.
+      profile picture, blood type, or government ID.
     </small>
   </div>
 
@@ -37,20 +54,6 @@
       name="blood_type"
       value="{{ request.user.donor_profile.blood_type }}"
     />
-
-    <div class="mb-3">
-      <label>Government ID</label>
-      <input
-        type="file"
-        name="government_id"
-        id="government_id"
-        class="form-control"
-        accept=".jpg,.jpeg,.png,.pdf"
-        required
-      />
-      <div class="invalid-feedback" id="government_id_error"></div>
-      <div class="valid-feedback">Looks good!</div>
-    </div>
 
     <div class="mb-3">
       <label>Medical Certificate / Blood Typing Result</label>
@@ -112,32 +115,18 @@
     return true;
   }
 
-  document
-    .getElementById("government_id")
-    .addEventListener("change", function () {
-      validateFile(this, "government_id_error");
-    });
+  document.getElementById("medical_certificate").addEventListener("change", function () {
+    validateFile(this, "medical_certificate_error");
+  });
 
-  document
-    .getElementById("medical_certificate")
-    .addEventListener("change", function () {
-      validateFile(this, "medical_certificate_error");
-    });
-
-  document
-    .getElementById("applicationForm")
-    .addEventListener("submit", function (e) {
-      const govValid = validateFile(
-        document.getElementById("government_id"),
-        "government_id_error",
-      );
-      const medValid = validateFile(
-        document.getElementById("medical_certificate"),
-        "medical_certificate_error",
-      );
-      if (!govValid || !medValid) {
-        e.preventDefault();
-      }
-    });
+  document.getElementById("applicationForm").addEventListener("submit", function (e) {
+    const medValid = validateFile(
+      document.getElementById("medical_certificate"),
+      "medical_certificate_error",
+    );
+    if (!medValid) {
+      e.preventDefault();
+    }
+  });
 </script>
 {% endblock %} {% endblock %}

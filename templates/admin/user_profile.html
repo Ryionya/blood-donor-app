@@ -69,34 +69,34 @@
     <!-- Recipient Info -->
     {% if recipient_profile %}
     <div class="card mt-3 border-0 shadow-sm">
-        <div class="card-body">
+    <div class="card-body">
             <h6 class="fw-semibold text-uppercase text-muted mb-3">
                 <i class="fa-solid fa-user me-2 text-danger"></i>Recipient Info
             </h6>
-            <div class="col-md-6">
+            <div class="col-md-6 mb-3">
                 <label class="form-label text-muted small">Blood Type</label>
-                <input type="text" class="form-control" value="{{ recipient_profile.blood_type }}" readonly>
+                <input type="text" class="form-control" 
+                    value="{% if recipient_profile.blood_type %}{{ recipient_profile.blood_type }}{% elif donor_profile %}{{ donor_profile.blood_type }}{% else %}—{% endif %}" 
+                    readonly>
             </div>
             <label class="form-label text-muted small">Government ID</label>
-            {% if recipient_profile.government_id %}
-                {% with name=recipient_profile.government_id.name %}
-                    <a href="{{ recipient_profile.government_id.url }}" target="_blank" style="text-decoration:none;">
-                        {% if '.pdf' in name %}
-                            <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
-                                <span style="font-size:48px;">📄</span>
-                                <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
-                                <small class="text-muted">{{ name }}</small>
-                            </div>
-                        {% else %}
-                            <img src="{{ recipient_profile.government_id.url }}"
-                                class="img-fluid rounded border"
-                                style="max-height:200px; object-fit:contain; width:100%; cursor:pointer;">
-                        {% endif %}
+            <br>
+            {% with gov_id=recipient_profile.government_id %}
+                {% if gov_id %}
+                    <a href="{{ gov_id.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-file me-1"></i> View Government ID
                     </a>
-                {% endwith %}
-            {% else %}
-                <p class="text-muted">Not uploaded</p>
-            {% endif %}
+                {% elif donor_profile and donor_profile.government_id %}
+                    <a href="{{ donor_profile.government_id.url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-file me-1"></i> View Government ID
+                    </a>
+                    <small class="text-muted d-block mt-1">
+                        <i class="fa-solid fa-circle-info me-1"></i>Using Government ID from donor profile.
+                    </small>
+                {% else %}
+                    <p class="text-muted">Not uploaded</p>
+                {% endif %}
+            {% endwith %}
         </div>
     </div>
 

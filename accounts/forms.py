@@ -69,7 +69,10 @@ class ProfileSetupForm(forms.ModelForm):
 class DonorProfileForm(forms.ModelForm):
     class Meta:
         model = DonorProfile
-        fields = ['blood_type', 'bio']
+        fields = ['blood_type', 'bio', 'government_id']
+        widgets = {
+            'government_id': forms.FileInput(attrs={'accept': '.jpg,.jpeg,.png,.pdf'}),
+        }
 
 
 class RecipientProfileForm(forms.ModelForm):

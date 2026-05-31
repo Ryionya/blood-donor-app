@@ -17,6 +17,11 @@ from accounts.models import User
 
 @login_required
 def apply_donor(request):
+        # Check if profile is complete
+    profile = request.user.donor_profile
+    if not profile.blood_type or not profile.government_id:
+        messages.error(request, 'Please complete your profile first — blood type and government ID are required before applying.')
+        return redirect('profile_setup')
 
     existing = DonorApplication.objects.filter(
         donor=request.user
@@ -67,7 +72,7 @@ def application_submitted(request):
 def admin_application_queue(request):
     applications = DonorApplication.objects.filter(
         status='pending'
-    ).select_related('donor').order_by('submitted_at')
+    ).select_related('donor').order_by('-submitted_at')
 
     return render(request, 'admin/application_queue.html', {
         'applications': applications,
@@ -295,7 +300,7 @@ def admin_stats(request):
 def admin_request_queue(request):
     requests = BloodRequest.objects.filter(
         status='pending_admin'
-    ).select_related('recipient', 'donor').order_by('created_at')
+    ).select_related('recipient', 'donor').order_by('-created_at')
 
     return render(request, 'admin/request_queue.html', {
         'requests': requests,
@@ -371,7 +376,7 @@ def admin_review_request(request, pk):
 @login_required
 @admin_required
 def admin_user_list(request):
-    users = User.objects.exclude(role='admin').order_by('role', 'username')
+    users = User.objects.exclude(role='admin').order_by('-date_joined')
     return render(request, 'admin/user_list.html', {
         'users': users,
         'total_donors': User.objects.filter(role='donor').count(),

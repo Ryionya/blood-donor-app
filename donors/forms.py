@@ -17,17 +17,11 @@ def validate_file(file):
 class DonorApplicationForm(forms.ModelForm):
     class Meta:
         model = DonorApplication
-        fields = ['government_id', 'medical_certificate']
+        fields = ['medical_certificate']
         widgets = {
-            'government_id': forms.FileInput(attrs={'accept': '.jpg,.jpeg,.png,.pdf'}),
             'medical_certificate': forms.FileInput(attrs={'accept': '.jpg,.jpeg,.png,.pdf'}),
         }
 
-    def clean_government_id(self):
-        file = self.cleaned_data.get('government_id')
-        if file:
-            validate_file(file)
-        return file
 
     def clean_medical_certificate(self):
         file = self.cleaned_data.get('medical_certificate')

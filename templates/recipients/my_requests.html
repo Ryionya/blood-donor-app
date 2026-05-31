@@ -40,8 +40,14 @@
               <span class="badge bg-danger fs-6 px-2">
                 {{ req.donor.donor_profile.blood_type|default:"?" }}
               </span>
-              <strong>{{ req.donor.get_full_name|default:req.donor.username }}</strong>
-              {% if req.urgency == 'critical' %}
+                <strong>
+                  {% if req.status == 'accepted' %}
+                    {{ req.donor.get_full_name|default:req.donor.username }}
+                  {% else %}
+                    {{ req.donor.username }}
+                  {% endif %}
+                </strong>
+                  {% if req.urgency == 'critical' %}
                 <span class="badge bg-danger">🔴 Critical</span>
               {% elif req.urgency == 'high' %}
                 <span class="badge bg-warning text-dark" style="background:#fd7e14!important;">🟠 High</span>

@@ -88,9 +88,9 @@
     <div class="row g-3 mt-1">
       <div class="col-md-6">
         <p class="fw-bold mb-1">Government ID</p>
-        {% if application.government_id %}
-          {% with name=application.government_id.name %}
-            <a href="{{ application.government_id.url }}" target="_blank" style="text-decoration:none;">
+        {% if application.donor.donor_profile.government_id %}
+          {% with name=application.donor.donor_profile.government_id.name %}
+            <a href="{{ application.donor.donor_profile.government_id.url }}" target="_blank" style="text-decoration:none;">
               {% if '.pdf' in name %}
                 <div class="border rounded p-3 text-center bg-light" style="height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
                   <span style="font-size:48px;">📄</span>
@@ -98,7 +98,7 @@
                   <small class="text-muted">{{ name }}</small>
                 </div>
               {% else %}
-                <img src="{{ application.government_id.url }}"
+                <img src="{{ application.donor.donor_profile.government_id.url }}"
                   class="img-fluid rounded border" alt="Government ID"
                   style="max-height:300px; object-fit:contain; width:100%; cursor:pointer;">
               {% endif %}

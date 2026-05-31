@@ -29,27 +29,47 @@
             </div>
             <p><strong>Phone:</strong> {{ blood_request.recipient.phone_number|default:"Not provided" }}</p>
             <p><strong>Location:</strong> {{ blood_request.recipient.location|default:"Not provided" }}</p>
-            <p><strong>Blood Type:</strong> {{ blood_request.recipient.recipient_profile.blood_type|default:"Not provided" }}</p>
-            <!-- Recipient Government ID -->
+            <p><strong>Blood Type:</strong> {{ blood_request.recipient.recipient_profile.blood_type|default:blood_request.recipient.donor_profile.blood_type|default:"Not provided" }}</p>
+           <!-- Recipient Government ID -->
             <p class="fw-semibold mb-1">Government ID</p>
-            {% if blood_request.recipient.recipient_profile.government_id %}
-                {% with name=blood_request.recipient.recipient_profile.government_id.name %}
-                    <a href="{{ blood_request.recipient.recipient_profile.government_id.url }}" target="_blank" style="text-decoration:none;">
-                        {% if '.pdf' in name %}
-                            <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
-                                <span style="font-size:48px;">📄</span>
-                                <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
-                            </div>
-                        {% else %}
-                            <img src="{{ blood_request.recipient.recipient_profile.government_id.url }}"
-                                class="img-fluid rounded border"
-                                style="max-height:200px; object-fit:contain; width:100%; cursor:pointer;">
-                        {% endif %}
-                    </a>
-                {% endwith %}
-            {% else %}
-                <p class="text-muted">Not uploaded</p>
-            {% endif %}
+            {% with recipient=blood_request.recipient %}
+                {% if recipient.recipient_profile.government_id %}
+                    {% with name=recipient.recipient_profile.government_id.name %}
+                        <a href="{{ recipient.recipient_profile.government_id.url }}" target="_blank" style="text-decoration:none;">
+                            {% if '.pdf' in name %}
+                                <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                                    <span style="font-size:48px;">📄</span>
+                                    <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
+                                </div>
+                            {% else %}
+                                <img src="{{ recipient.recipient_profile.government_id.url }}"
+                                    class="img-fluid rounded border"
+                                    style="max-height:200px; object-fit:contain; width:100%; cursor:pointer;">
+                            {% endif %}
+                        </a>
+                    {% endwith %}
+                {% elif recipient.donor_profile.government_id %}
+                    {% with name=recipient.donor_profile.government_id.name %}
+                        <a href="{{ recipient.donor_profile.government_id.url }}" target="_blank" style="text-decoration:none;">
+                            {% if '.pdf' in name %}
+                                <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                                    <span style="font-size:48px;">📄</span>
+                                    <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
+                                </div>
+                            {% else %}
+                                <img src="{{ recipient.donor_profile.government_id.url }}"
+                                    class="img-fluid rounded border"
+                                    style="max-height:200px; object-fit:contain; width:100%; cursor:pointer;">
+                            {% endif %}
+                        </a>
+                        <small class="text-muted d-block mt-1">
+                            <i class="fa-solid fa-circle-info me-1"></i>Using Government ID from donor profile.
+                        </small>
+                    {% endwith %}
+                {% else %}
+                    <p class="text-muted">Not uploaded</p>
+                {% endif %}
+            {% endwith %}
         </div>
     </div>
 
@@ -73,16 +93,16 @@
             <p class="mt-2"><strong>Blood Type:</strong> {{ blood_request.donor.donor_profile.blood_type|default:"Not provided"  }}</p>
             <!-- Donor Government ID -->
             <p class="fw-semibold mb-1">Government ID</p>
-            {% if blood_request.recipient.recipient_profile.government_id %}
-                {% with name=blood_request.recipient.recipient_profile.government_id.name %}
-                    <a href="{{ blood_request.recipient.recipient_profile.government_id.url }}" target="_blank" style="text-decoration:none;">
+            {% if blood_request.donor.donor_profile.government_id %}
+                {% with name=blood_request.donor.donor_profile.government_id.name %}
+                    <a href="{{ blood_request.donor.donor_profile.government_id.url }}" target="_blank" style="text-decoration:none;">
                         {% if '.pdf' in name %}
                             <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
                                 <span style="font-size:48px;">📄</span>
                                 <p class="mt-2 mb-0 fw-bold text-danger">PDF Document</p>
                             </div>
                         {% else %}
-                            <img src="{{ blood_request.recipient.recipient_profile.government_id.url }}"
+                            <img src="{{ blood_request.donor.donor_profile.government_id.url }}"
                                 class="img-fluid rounded border"
                                 style="max-height:200px; object-fit:contain; width:100%; cursor:pointer;">
                         {% endif %}
