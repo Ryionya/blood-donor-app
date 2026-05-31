@@ -23,10 +23,33 @@ import os
 #  BROWSE / SEARCH PAGE
 # ─────────────────────────────────────────────
 
+BLOOD_TYPE_COMPATIBILITY = {
+    'A+':  ['A+', 'A-', 'O+', 'O-'],
+    'A-':  ['A-', 'O-'],
+    'B+':  ['B+', 'B-', 'O+', 'O-'],
+    'B-':  ['B-', 'O-'],
+    'AB+': ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
+    'AB-': ['A-', 'B-', 'AB-', 'O-'],
+    'O+':  ['O+', 'O-'],
+    'O-':  ['O-'],
+}
+
 @login_required
 def browse_donors_view(request):
     blood_type = request.GET.get('blood_type', '')
-    location = request.GET.get('location', '')
+    location   = request.GET.get('location', '')
+
+    # Get recipient's blood type — donors use donor_profile, recipients use recipient_profile
+    recipient_blood_type = None
+    try:
+        if request.user.role == 'donor':
+            recipient_blood_type = request.user.donor_profile.blood_type
+        else:
+            recipient_blood_type = request.user.recipient_profile.blood_type
+    except Exception:
+        pass
+
+    compatible_types = BLOOD_TYPE_COMPATIBILITY.get(recipient_blood_type, [])
 
     donors = DonorProfile.objects.filter(
         is_verified=True,
@@ -39,12 +62,27 @@ def browse_donors_view(request):
     if location:
         donors = donors.filter(user__location__icontains=location)
 
+    # Temporary: filter to compatible types until M1's backend logic is merged
+    if compatible_types and not blood_type:
+        donors = donors.filter(blood_type__in=compatible_types)
+
+    # Sort: exact match → compatible → everything else
+    def sort_key(donor):
+        if recipient_blood_type and donor.blood_type == recipient_blood_type:
+            return 0
+        elif donor.blood_type in compatible_types:
+            return 1
+        else:
+            return 2
+
+    donors = sorted(donors, key=sort_key)
+
     # AI Recommendation
     ai_recommendation = None
-    if donors.exists() and (blood_type or location):
+    if donors and (blood_type or location):
         try:
             ai_recommendation = get_donor_recommendation(
-                donors=list(donors),
+                donors=donors,
                 blood_type_needed=blood_type,
                 location=location
             )
@@ -59,7 +97,11 @@ def browse_donors_view(request):
     except Exception:
         ph_cities = []
 
-    blood_type_choices = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+    # Narrow blood type dropdown to compatible types only if blood type is known
+    if compatible_types:
+        blood_type_choices = compatible_types
+    else:
+        blood_type_choices = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
     return render(request, 'recipients/browse.html', {
         'donors': donors,
@@ -68,6 +110,8 @@ def browse_donors_view(request):
         'selected_location': location,
         'ph_cities': ph_cities,
         'ai_recommendation': ai_recommendation,
+        'recipient_blood_type': recipient_blood_type,
+        'compatible_types': compatible_types,
     })
  
 # ─────────────────────────────────────────────

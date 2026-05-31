@@ -15,7 +15,7 @@
     </div>
   </div>
   <span class="badge bg-danger fs-6">
-    {{ result_count }} donor{{ result_count|pluralize }} found
+    {{ donors|length }} donor{{ donors|length|pluralize }} found
   </span>
 </div>
 
@@ -77,6 +77,25 @@
 </div>
 {% endif %}
 
+{% if recipient_blood_type %}
+<div class="alert border-0 py-2 mb-3 d-flex align-items-center gap-2"
+     style="font-size:0.875rem; background:#fff5f5;">
+    <span>🩸</span>
+    <span>
+        Your blood type is <strong>{{ recipient_blood_type }}</strong> —
+        showing compatible donors (<strong>{{ compatible_types|join:", " }}</strong>) first.
+    </span>
+</div>
+{% else %}
+<div class="alert alert-warning border-0 py-2 mb-3 d-flex align-items-center gap-2"
+     style="font-size:0.875rem;">
+    <span>⚠️</span>
+    <span>
+        Blood type not set. <a href="{% url 'profile_setup' %}" class="alert-link">Update your profile</a> to see compatible donors first.
+    </span>
+</div>
+{% endif %}
+
 <!-- AI Recommendation List -->
 {% if ai_recommendation %}
 <div class="alert border-0 shadow-sm mb-4" 
@@ -98,13 +117,20 @@
     <div class="col-sm-6 col-lg-4">
       <div class="card h-100 shadow-sm border-0 {% if not donor.is_available %}opacity-75{% endif %}">
 
-        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-          <span class="badge bg-danger fs-5 px-3">{{ donor.blood_type }}</span>
-          {% if donor.is_available %}
-            <span class="badge bg-success">✅ Available</span>
-          {% else %}
-            <span class="badge bg-secondary">⏸ Unavailable</span>
-          {% endif %}
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center flex-wrap gap-1">
+            <div class="d-flex align-items-center gap-1">
+                <span class="badge bg-danger fs-5 px-3">{{ donor.blood_type }}</span>
+                {% if donor.blood_type == recipient_blood_type %}
+                    <span class="badge bg-success">⭐ Best Match</span>
+                {% elif donor.blood_type in compatible_types %}
+                    <span class="badge bg-success" style="opacity:0.75;">🩸 Compatible</span>
+                {% endif %}
+            </div>
+            {% if donor.is_available %}
+                <span class="badge bg-success">✅ Available</span>
+            {% else %}
+                <span class="badge bg-secondary">⏸ Unavailable</span>
+            {% endif %}
         </div>
 
         <div class="card-body text-center">

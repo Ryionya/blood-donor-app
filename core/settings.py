@@ -105,7 +105,7 @@ DATABASES = {
     'default': dj_database_url.config(
         default=f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}",
         conn_max_age=600,
-        ssl_require=not os.getenv('DEBUG', 'False') == 'False'
+        ssl_require=False,
     )
 }
 
