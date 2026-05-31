@@ -233,6 +233,12 @@
                           </li>
                           {% endif %}
 
+                          <li>
+                              <a class="dropdown-item" href="{% url 'change_password' %}">
+                                  🔒 Change Password
+                              </a>
+                          </li>
+
                           <li><hr class="dropdown-divider"></li>
                           <li>
                               <form method="POST" action="{% url 'logout' %}">
