@@ -177,13 +177,13 @@ cloudinary.config(
     sign_url=False,
 )
 
-#Use Cloudinary for media files
+# Use Cloudinary for media files
 STORAGES = {
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
