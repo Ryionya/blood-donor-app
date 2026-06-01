@@ -11,7 +11,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <div class="d-flex align-items-center gap-2">
-      <span style="font-size: 2rem; line-height: 1;">📋</span>
+      <i class="fa-solid fa-clipboard-list text-danger" style="font-size:2rem;"></i>
       <div>
         <h3 class="fw-bold text-danger mb-0">My Requests</h3>
         <p class="text-muted mb-0">Donation requests you have sent</p>
@@ -64,26 +64,26 @@
                   {% endif %}
                 </strong>
                   {% if req.urgency == 'critical' %}
-                <span class="badge bg-danger">🔴 Critical</span>
+                <span class="badge bg-danger"><i class="fa-solid fa-circle me-1"></i>Critical</span>
               {% elif req.urgency == 'high' %}
-                <span class="badge bg-warning text-dark" style="background:#fd7e14!important;">🟠 High</span>
+                <span class="badge bg-warning text-dark" style="background:#fd7e14!important;"><i class="fa-solid fa-circle me-1"></i>High</span>
               {% elif req.urgency == 'medium' %}
-                <span class="badge bg-warning text-dark">🟡 Medium</span>
+                <span class="badge bg-warning text-dark"><i class="fa-solid fa-circle me-1"></i>Medium</span>
               {% else %}
-                <span class="badge bg-success">🟢 Low</span>
+                <span class="badge bg-success"><i class="fa-solid fa-circle me-1"></i>Low</span>
               {% endif %}
             </div>
 
             <p class="mb-1 small text-muted">
-              🏥 {{ req.hospital_name }} &nbsp;·&nbsp;
-              📍 {{ req.donor.donor_profile.location|default:"—" }} &nbsp;·&nbsp;
-              📅 {{ req.created_at|date:"M d, Y" }}
+              <i class="fa-solid fa-hospital me-1"></i>{{ req.hospital_name }} &nbsp;·&nbsp;
+              <i class="fa-solid fa-location-dot me-1"></i>{{ req.donor.donor_profile.location|default:"—" }} &nbsp;·&nbsp;
+              <i class="fa-regular fa-calendar me-1"></i>{{ req.created_at|date:"M d, Y" }}
             </p>
 
             <p class="mb-1 small">{{ req.message|truncatechars:120 }}</p>
 
             <p class="text-muted small mb-0">
-              ⚠️ Urgency: {{ req.get_urgency_display }} &nbsp;·&nbsp;
+              <i class="fa-solid fa-triangle-exclamation me-1"></i>Urgency: {{ req.get_urgency_display }} &nbsp;·&nbsp;
               Sent {{ req.created_at|timesince }} ago
             </p>
 
@@ -93,27 +93,27 @@
           <div class="col-md-4 text-md-end mt-2 mt-md-0">
 
           {% if req.status == 'pending_admin' %}
-            <span class="badge bg-secondary fs-6">🔍 Under Review</span>
+            <span class="badge bg-secondary fs-6"><i class="fa-solid fa-magnifying-glass me-1"></i>Under Review</span>
             <p class="text-muted small mt-1 mb-0">Your request is being reviewed by admin before being sent to the donor.</p>
 
           {% elif req.status == 'pending' %}
-            <span class="badge bg-warning text-dark fs-6">⏳ Pending</span>
+            <span class="badge bg-warning text-dark fs-6"><i class="fa-solid fa-hourglass-half me-1"></i>Pending</span>
             <p class="text-muted small mt-1 mb-0">Waiting for donor response…</p>
 
           {% elif req.status == 'accepted' %}
-            <span class="badge bg-success fs-6">✅ Accepted</span>
+            <span class="badge bg-success fs-6"><i class="fa-solid fa-circle-check me-1"></i>Accepted</span>
             <div class="mt-2 p-2 bg-light rounded small text-start">
-              <p class="mb-1 fw-semibold">📞 Donor Contact</p>
+              <p class="mb-1 fw-semibold"><i class="fa-solid fa-phone me-1"></i>Donor Contact</p>
               <p class="mb-0">{{ req.donor.phone_number|default:"Not provided" }}</p>
-              <p class="mb-0 text-muted">📍 {{ req.donor.location|default:"Not provided" }}</p>
+              <p class="mb-0 text-muted"><i class="fa-solid fa-location-dot me-1"></i>{{ req.donor.location|default:"Not provided" }}</p>
               <p class="mb-0 text-muted">Coordinate directly with the donor.</p>
             </div>
             <a href="{% url 'chat' req.pk %}" class="btn btn-danger btn-sm w-100 mt-2">
-                💬 Open Chat
+                <i class="fa-solid fa-comments me-1"></i>Open Chat
             </a>
 
           {% elif req.status == 'declined' %}
-            <span class="badge bg-secondary fs-6">❌ Declined</span>
+            <span class="badge bg-secondary fs-6"><i class="fa-solid fa-circle-xmark me-1"></i>Declined</span>
             <p class="text-muted small mt-1 mb-0">This donor could not help this time.</p>
             <a href="{% url 'browse_donors' %}" class="btn btn-sm btn-outline-danger mt-2">
               Find Another Donor
@@ -132,7 +132,7 @@
             </a>
 
             {% elif req.status == 'declined' %}
-              <span class="badge bg-secondary fs-6">❌ Declined</span>
+              <span class="badge bg-secondary fs-6"><i class="fa-solid fa-circle-xmark me-1"></i>Declined</span>
               <p class="text-muted small mt-1 mb-0">This donor could not help this time.</p>
               <a href="{% url 'browse_donors' %}" class="btn btn-sm btn-outline-danger mt-2">
                 Find Another Donor
@@ -151,7 +151,7 @@
 
 {% else %}
   <div class="text-center py-5">
-    <div class="display-1">📭</div>
+    <i class="fa-solid fa-inbox text-muted" style="font-size:4rem;"></i>
     <h5 class="mt-3 fw-bold">No requests yet</h5>
     <p class="text-muted">When you send a donation request, it will appear here.</p>
     <a href="{% url 'browse_donors' %}" class="btn btn-danger mt-2">Browse Donors</a>

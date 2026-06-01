@@ -12,7 +12,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
     <div class="d-flex align-items-center gap-2">
-      <span style="font-size: 2rem; line-height: 1;">🩸</span>
+      <i class="fa-solid fa-droplet text-danger" style="font-size:2rem;"></i>
       <div>
         <h3 class="fw-bold text-danger mb-0">Find a Donor</h3>
         <p class="text-muted mb-0">Browse verified blood donors near you</p>
@@ -83,7 +83,7 @@
 {% if recipient_blood_type %}
 <div class="alert border-0 py-2 mb-3 d-flex align-items-center gap-2"
      style="font-size:0.875rem; background:#fff5f5;">
-    <span>🩸</span>
+    <i class="fa-solid fa-droplet text-danger"></i>
     <span>
         Your blood type is <strong>{{ recipient_blood_type }}</strong> —
         showing compatible donors (<strong>{{ compatible_types|join:", " }}</strong>) first.
@@ -92,7 +92,7 @@
 {% else %}
 <div class="alert alert-warning border-0 py-2 mb-3 d-flex align-items-center gap-2"
      style="font-size:0.875rem;">
-    <span>⚠️</span>
+    <i class="fa-solid fa-triangle-exclamation text-warning"></i>
     <span>
         Blood type not set. <a href="{% url 'profile_setup' %}" class="alert-link">Update your profile</a> to see compatible donors first.
     </span>
@@ -104,7 +104,7 @@
 <div class="alert border-0 shadow-sm mb-4" 
      style="background: linear-gradient(135deg, #fff5f5, #ffe0e0); border-left: 4px solid #C0392B !important;">
     <div class="d-flex align-items-start gap-2">
-        <span style="font-size: 1.5rem;">🤖</span>
+        <i class="fa-solid fa-robot text-danger" style="font-size:1.5rem;"></i>
         <div>
             <strong class="text-danger">AI Recommendation</strong>
             <p class="mb-0 mt-1 text-dark">{{ ai_recommendation }}</p>
@@ -123,15 +123,15 @@
             <div class="d-flex align-items-center gap-1">
                 <span class="badge bg-danger fs-5 px-3">{{ donor.blood_type }}</span>
                 {% if donor.blood_type == recipient_blood_type %}
-                    <span class="badge bg-success">⭐ Best Match</span>
+                    <span class="badge bg-success"><i class="fa-solid fa-star me-1"></i>Best Match</span>
                 {% elif donor.blood_type in compatible_types %}
-                    <span class="badge bg-success" style="opacity:0.75;">🩸 Compatible</span>
+                    <span class="badge bg-success" style="opacity:0.75;"><i class="fa-solid fa-droplet me-1"></i>Compatible</span>
                 {% endif %}
             </div>
             {% if donor.is_available %}
                 <span class="badge bg-success">✅ Available</span>
             {% else %}
-                <span class="badge bg-secondary">⏸ Unavailable</span>
+                <span class="badge bg-secondary"><i class="fa-solid fa-circle-pause me-1"></i>Unavailable</span>
             {% endif %}
         </div>
 
@@ -148,7 +148,7 @@
               <i class="fa-solid fa-circle-check"></i>
             </span>
           </h5>
-          <p class="text-muted small mb-1">📍 {{ donor.user.location|default:"Location not set" }}</p>
+          <p class="text-muted small mb-1"><i class="fa-solid fa-location-dot text-muted me-1"></i>{{ donor.user.location|default:"Location not set" }}</p>
           {% if donor.bio %}
             <p class="text-muted small mb-0">{{ donor.bio|truncatechars:80 }}</p>
           {% endif %}
@@ -173,7 +173,7 @@
 
 {% else %}
   <div class="text-center py-5">
-    <div class="display-1">🔍</div>
+    <i class="fa-solid fa-magnifying-glass text-muted" style="font-size:4rem;"></i>
     <h5 class="mt-3 fw-bold">No donors found</h5>
     <p class="text-muted">Try adjusting your filters, or check back later.</p>
     <a href="{% url 'browse_donors' %}" class="btn btn-outline-danger mt-2">Clear Filters</a>

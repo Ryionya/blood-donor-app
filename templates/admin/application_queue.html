@@ -11,35 +11,64 @@
   </div>
 
   {% if applications %}
-  <table class="table table-hover">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Blood Type</th>
-        <th>Submitted</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for app in applications %}
-      <tr>
-        <td>{{ app.donor.get_full_name|default:app.donor.username }}</td>
-        <td>{{ app.donor.email }}</td>
-        <td>{{ app.donor.donor_profile.blood_type }}</td>
-        <td>{{ app.submitted_at|date:"M d, Y" }}</td>
-        <td>
-          <a href="{% url 'review_application' app.id %}" class="btn btn-sm btn-outline-primary">
-            Review
-          </a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+  <!-- Desktop table — hidden on mobile -->
+  <div class="d-none d-md-block">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Blood Type</th>
+            <th>Submitted</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in applications %}
+          <tr>
+            <td class="fw-semibold">{{ app.donor.get_full_name|default:app.donor.username }}</td>
+            <td class="text-muted small">{{ app.donor.email }}</td>
+            <td><span class="badge bg-danger px-2">{{ app.donor.donor_profile.blood_type }}</span></td>
+            <td class="text-muted small">{{ app.submitted_at|date:"M d, Y" }}</td>
+            <td>
+              <a href="{% url 'review_application' app.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                <i class="fa-solid fa-eye me-1"></i>Review
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Mobile cards — shown only on mobile -->
+  <div class="d-md-none">
+    {% for app in applications %}
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+      <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="fw-bold">{{ app.donor.get_full_name|default:app.donor.username }}</div>
+            <div class="text-muted small">{{ app.donor.email }}</div>
+          </div>
+          <span class="badge bg-danger px-2">{{ app.donor.donor_profile.blood_type }}</span>
+        </div>
+        <div class="text-muted small mb-3">
+          <i class="fa-regular fa-calendar me-1"></i>{{ app.submitted_at|date:"M d, Y" }}
+        </div>
+        <a href="{% url 'review_application' app.id %}" class="btn btn-sm btn-outline-primary rounded-pill w-100">
+          <i class="fa-solid fa-eye me-1"></i>Review Application
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
   {% else %}
     <div class="text-center py-5">
-        <div class="display-1">✅</div>
+        <i class="fa-solid fa-circle-check text-success" style="font-size:4rem;"></i>
         <h5 class="mt-3 fw-bold">No pending applications</h5>
         <p class="text-muted">All applications have been reviewed.</p>
     </div>

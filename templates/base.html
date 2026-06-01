@@ -169,27 +169,27 @@
                       <ul class="dropdown-menu dropdown-menu-end">
                           <li>
                               <a class="dropdown-item" href="{% url 'profile_setup' %}">
-                                  👤 My Profile
+                                  <i class="fa-solid fa-user me-2"></i>My Profile
                               </a>
                           </li>
 
                           {% if user.role == 'donor' %}
                           <li>
                               <a class="dropdown-item" href="{% url 'my_application' %}">
-                                  📋 My Application
+                                  <i class="fa-solid fa-file-medical me-2"></i>My Application
                               </a>
                           </li>
                           {% endif %}
 
                           <li>
                               <a class="dropdown-item" href="{% url 'change_password' %}">
-                                  🔒 Change Password
+                                  <i class="fa-solid fa-lock me-2"></i>Change Password
                               </a>
                           </li>
 
                           <li>
                               <a class="dropdown-item" href="{% url 'faq' %}">
-                                  ❓ FAQ & How It Works
+                                  <i class="fa-solid fa-circle-question me-2"></i>FAQ & How It Works
                               </a>
                           </li>
                           <li><hr class="dropdown-divider"></li>
@@ -216,29 +216,6 @@
           </div>
         </nav>
         <!-- ── End Navbar ──────────────────────────────────────────── -->
-
-        <!-- Django messages (flash alerts) -->
-        {% if messages %}
-          <div class="container mt-3" id="django-messages">
-            {% for message in messages %}
-              <div
-                class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show"
-                role="alert"
-              >
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-              </div>
-            {% endfor %}
-          </div>
-          <script>
-            setTimeout(function () {
-              document.querySelectorAll('#django-messages .alert').forEach(function (el) {
-                el.classList.remove('show');
-                setTimeout(function () { el.remove(); }, 300);
-              });
-            }, 4000);
-          </script>
-        {% endif %}
 
         <main class="container mt-4 pb-5">
           {% block content %}{% endblock %}
@@ -267,10 +244,77 @@
 
     <!-- ── Floating Mic Button ── -->
     <div id="voice-fab-wrapper"
-         style="position:fixed; bottom:24px; right:24px; z-index:10000; display:flex; flex-direction:row; align-items:flex-end; gap:10px;">
+     style="position:fixed; bottom:24px; right:24px; z-index:10000; display:flex; flex-direction:column; align-items:flex-end; gap:10px;">
 
-      <!-- Mic button -->
-      <button id="global-voice-btn"
+  <!-- Django messages stacked here -->
+  <div id="django-messages-fab" style="display:flex; flex-direction:column; gap:10px; align-items:flex-end; width:100%; max-width:400px;">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="bg-white shadow-lg rounded-4 p-3 pe-5 border position-relative django-msg-card"
+             style="width:95vw; max-width:400px; animation:slideInRight 0.25s ease;">
+          <div class="d-flex align-items-center gap-3">
+            {% if message.tags == 'success' %}
+              <div style="width:36px;height:36px;border-radius:50%;background:#d4edda;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fa-solid fa-circle-check" style="color:#27ae60;font-size:1rem;"></i>
+              </div>
+            {% elif message.tags == 'error' or message.tags == 'danger' %}
+              <div style="width:36px;height:36px;border-radius:50%;background:#f8d7da;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fa-solid fa-circle-xmark" style="color:#c0392b;font-size:1rem;"></i>
+              </div>
+            {% elif message.tags == 'warning' %}
+              <div style="width:36px;height:36px;border-radius:50%;background:#fff3cd;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fa-solid fa-triangle-exclamation" style="color:#f39c12;font-size:1rem;"></i>
+              </div>
+            {% else %}
+              <div style="width:36px;height:36px;border-radius:50%;background:#cce5ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fa-solid fa-circle-info" style="color:#185fa5;font-size:1rem;"></i>
+              </div>
+            {% endif %}
+            <p class="mb-0 fw-semibold" style="font-size:0.875rem;color:#1a1a1a;">{{ message }}</p>
+          </div>
+          <button type="button"
+                  class="btn btn-sm position-absolute top-0 end-0 mt-2 me-2 border-0 bg-transparent text-muted"
+                  style="font-size:16px;line-height:1;"
+                  onclick="this.closest('.django-msg-card').remove()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- Install card -->
+  <div id="installCard"
+       class="d-none"
+       style="width:95vw; max-width:400px;">
+    <div class="bg-white shadow-lg rounded-4 p-4 pe-5 border position-relative">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+          <div class="me-3">
+            <img src="/static/images/icon-192.png"
+                 alt="BloodLink Logo"
+                 class="rounded-4 shadow-sm"
+                 style="width:50px;height:50px;object-fit:cover;">
+          </div>
+          <div>
+            <h6 class="mb-1 fw-bold">Install BloodLink</h6>
+            <small class="text-muted">Fast, offline-ready, app-like experience.</small>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button id="installBtn" class="btn btn-danger rounded-3 px-3 fw-semibold shadow-sm">Install</button>
+          <button id="closeInstallCard"
+                  class="btn btn-sm position-absolute top-0 end-0 mt-2 me-2 border-0 bg-transparent text-muted"
+                  style="font-size:18px;">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mic button -->
+  <button id="global-voice-btn"
               title="Voice Command (Filipino/English)"
               style="width:56px; height:56px; border-radius:50%; border:none;
                      background:#c0392b; color:#fff; font-size:1.3rem;
@@ -279,50 +323,6 @@
                      cursor:pointer; transition: transform 0.15s, box-shadow 0.15s;">
         <i class="fa-solid fa-microphone" id="global-voice-icon"></i>
       </button>
-    </div>
-
-    <!-- Modern Install Card -->
-    <div id="installCard"
-        class="d-none position-fixed bottom-0 end-0 m-3"
-        style="z-index:9999; width:95%; max-width:470px;">
-
-        <div class="bg-white shadow-lg rounded-4 p-4 pe-5 border position-relative">
-
-        <div class="d-flex align-items-center justify-content-between">
-
-          <!-- Left Side -->
-          <div class="d-flex align-items-center">
-              <div class="me-3">
-                  <img src="/static/images/icon-192.png"
-                      alt="BloodLink Logo"
-                      class="rounded-4 shadow-sm"
-                      style="width:50px; height:50px; object-fit:cover;">
-              </div>
-
-            <div>
-                <h6 class="mb-1 fw-bold">Install BloodLink</h6>
-                <small class="text-muted">
-                    Fast, offline-ready, app-like experience.
-                </small>
-            </div>
-          </div>
-
-          <!-- Right Side buttons -->
-          <div class="d-flex align-items-center gap-2">
-
-            <button id="installBtn"
-              class="btn btn-danger rounded-3 px-3 fw-semibold shadow-sm">
-                Install
-            </button>
-
-            <button id="closeInstallCard"
-              class="btn btn-sm position-absolute top-0 end-0 mt-2 me-2 border-0 bg-transparent text-muted"
-              style="font-size:18px;">
-              ✕
-            </button>
-          </div>
-        </div>
-        </div>
     </div>
 
     <!-- PWA Install Script -->
@@ -619,6 +619,21 @@
     })();
     </script>
 
+<style>
+  @keyframes slideInRight {
+    from { opacity:0; transform:translateX(40px); }
+    to   { opacity:1; transform:translateX(0); }
+  }
+</style>
+<script>
+  setTimeout(function () {
+    document.querySelectorAll('.django-msg-card').forEach(function (el) {
+      el.style.transition = 'opacity 0.3s ease';
+      el.style.opacity = '0';
+      setTimeout(function () { el.remove(); }, 300);
+    });
+  }, 4000);
+</script>
 
     </body> 
     </html>

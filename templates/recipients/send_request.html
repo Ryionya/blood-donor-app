@@ -13,12 +13,12 @@
     <div class="card shadow border-0">
 
       <div class="card-header bg-danger text-white py-3">
-        <h5 class="mb-0 fw-bold">🩸 Send Donation Request</h5>
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-paper-plane me-2 text-danger"></i>Send Donation Request</h5>
         <p class="mb-0 small opacity-75">
           Requesting from
           <strong>{{ donor.user.username }}</strong>
           — Blood Type <span class="badge bg-white text-danger">{{ donor.blood_type }}</span>
-          · 📍 {{ donor.location|default:"Location not set" }}
+          · <i class="fa-solid fa-location-dot me-1"></i>{{ donor.location|default:"Location not set" }}
         </p>
       </div>
 
@@ -135,7 +135,7 @@
 
           <!-- Privacy note -->
           <div class="alert alert-warning py-2 small mb-4">
-            🔒 Contact information is only revealed <strong>after the donor accepts</strong> your request.
+            <i class="fa-solid fa-lock me-1"></i>Contact information is only revealed <strong>after the donor accepts</strong> your request.
           </div>
 
           <div class="d-grid gap-2">
@@ -173,16 +173,16 @@ dateInput.addEventListener('change', function () {
 
   let label, classes;
   if (daysLeft <= 1) {
-    label = '🔴 Critical — Emergency';
+    label = 'Critical — Emergency';
     classes = 'badge bg-danger';
   } else if (daysLeft <= 3) {
-    label = '🟠 High — Urgent';
+    label = 'High — Urgent';
     classes = 'badge bg-warning text-dark';
   } else if (daysLeft <= 7) {
-    label = '🟡 Medium — Needed soon';
+    label = 'Medium — Needed soon';
     classes = 'badge bg-info text-dark';
   } else {
-    label = '🟢 Low — Scheduled donation';
+    label = 'Low — Scheduled donation';
     classes = 'badge bg-success';
   }
 
