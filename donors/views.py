@@ -243,7 +243,8 @@ def log_donation_view(request):
         return redirect('home')
 
     if profile.is_on_cooldown():
-        messages.warning(request, f'You are currently on cooldown until {profile.cooldown_until.strftime("%B %d, %Y")}.')
+        local_cooldown = timezone.localtime(profile.cooldown_until)
+        messages.warning(request, f'You are currently on cooldown until {local_cooldown.strftime("%B %d, %Y")}.')
         return redirect('cooldown_status')
 
     if request.method == 'POST':
