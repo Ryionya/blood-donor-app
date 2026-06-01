@@ -355,6 +355,15 @@ def respond_request_view(request, request_id):
             blood_request.status = 'accepted'
             blood_request.responded_at = timezone.now()
             blood_request.save()
+            
+            # Set donor as unavailable after accepting
+            try:
+                profile = request.user.donor_profile
+                profile.is_available = False
+                profile.save()
+            except Exception:
+                pass
+            
             messages.success(request, 'You accepted the donation request.')
 
             try:
@@ -378,6 +387,20 @@ def respond_request_view(request, request_id):
             blood_request.status = 'declined'
             blood_request.responded_at = timezone.now()
             blood_request.save()
+            
+            # Restore availability if no other accepted requests
+            has_active = BloodRequest.objects.filter(
+                donor=request.user,
+                status='accepted'
+            ).exists()
+            if not has_active:
+                try:
+                    profile = request.user.donor_profile
+                    profile.is_available = True
+                    profile.save()
+                except Exception:
+                    pass
+        
             messages.info(request, 'You declined the donation request.')
 
             try:
@@ -543,8 +566,8 @@ def chat_view(request, request_id):
     # Determine if chat is read only
     # Chat becomes read only when donation is logged
     is_read_only = DonorProfile.objects.filter(
-        user=blood_request.donor,
-        cooldown_until__isnull=False
+        donor=blood_request.donor,
+        donated_at__gte=blood_request.responded_at
     ).exists()
 
     return render(request, 'recipients/chat.html', {
