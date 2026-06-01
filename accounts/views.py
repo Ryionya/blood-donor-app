@@ -53,7 +53,7 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             if user.role == 'donor':
-                DonorProfile.objects.create(user=user)
+                DonorProfile.objects.create(user=user, is_blood_type_locked=False)
             elif user.role == 'recipient':
                 RecipientProfile.objects.create(user=user)
             user.profile_picture = form.cleaned_data['profile_picture']
