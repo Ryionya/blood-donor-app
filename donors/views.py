@@ -20,6 +20,11 @@ from django.utils import timezone
 
 @login_required
 def apply_donor(request):
+    # Check if user is suspended
+    if request.user.flagged_until and timezone.now() < request.user.flagged_until:
+        messages.error(request, f'You are suspended until {timezone.localtime(request.user.flagged_until).strftime("%B %d, %Y %I:%M %p")}. You cannot submit applications.')
+        return redirect('my_application')
+    
     # Check if profile is complete
     profile = request.user.donor_profile
     if not profile.blood_type or not profile.government_id:
@@ -98,10 +103,36 @@ def admin_review_application(request, pk):
         note = request.POST.get('admin_note', '').strip()
         flag_user = request.POST.get('flag_user')
 
+        if flag_user and not note:
+            messages.error(request, 'Please provide a rejection reason when flagging a user.')
+            return redirect('review_application', pk=pk)
+
         if flag_user:
             application.donor.is_flagged = True
+            application.donor.flag_count += 1
+
+            if application.donor.flag_count == 1:
+                # 1st flag — 2 minute suspension
+                application.donor.flagged_until = timezone.now() + timedelta(minutes=2)
+                suspension_msg = 'You have been flagged. You cannot submit applications for 2 minutes.'
+            elif application.donor.flag_count == 2:
+                # 2nd flag — 1 day suspension
+                application.donor.flagged_until = timezone.now() + timedelta(days=1)
+                suspension_msg = 'You have been flagged again. You cannot submit applications for 1 day.'
+            else:
+                # 3rd flag and above — 2 month suspension
+                application.donor.flagged_until = timezone.now() + timedelta(days=60)
+                suspension_msg = 'You have been flagged multiple times. You cannot submit applications for 2 months.'
+
             application.donor.save()
-            messages.warning(request, f"{application.donor.username} has been flagged for suspicious behavior.")
+
+            send_notification(
+                user=application.donor,
+                notif_type='rejected',
+                message=suspension_msg,
+            )
+
+            messages.warning(request, f"{application.donor.username} has been flagged (flag count: {application.donor.flag_count}).")
 
         if action == 'approve':
             application.status = DonorApplication.STATUS_APPROVED
@@ -148,6 +179,17 @@ def admin_review_application(request, pk):
     return render(request, 'admin/review_application.html', {
         'application': application
     })
+
+@login_required
+@admin_required
+def admin_unflag_user(request, pk):
+    from accounts.models import User
+    user = get_object_or_404(User, pk=pk)
+    user.is_flagged = False
+    user.flagged_until = None
+    user.save()
+    messages.success(request, f"{user.username} has been unflagged.")
+    return redirect('admin_user_profile', pk=pk)
 
 
 @login_required

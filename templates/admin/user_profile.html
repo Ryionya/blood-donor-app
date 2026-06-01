@@ -22,7 +22,13 @@
                     <h5 class="mb-0 fw-bold">
                         {{ profile_user.get_full_name|default:profile_user.username }}
                         {% if profile_user.is_flagged %}
-                            <span class="badge bg-warning text-dark ms-1">Flagged</span>
+                            <span class="badge bg-warning text-dark ms-1">⚠ Flagged ({{ profile_user.flag_count }}x)</span>
+                            <form method="POST" action="{% url 'admin_unflag_user' profile_user.pk %}" class="d-inline ms-2">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-warning">
+                                    <i class="fa-solid fa-flag me-1"></i> Unflag
+                                </button>
+                            </form>
                         {% endif %}
                     </h5>
                     <small class="text-muted">@{{ profile_user.username }}</small><br>

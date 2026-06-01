@@ -40,6 +40,8 @@ class User(AbstractUser):
     location = models.CharField(max_length=100, blank=True)
     profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
     is_flagged = models.BooleanField(default=False)
+    flag_count = models.IntegerField(default=0)
+    flagged_until = models.DateTimeField(null=True, blank=True)
     
     objects = CustomUserManager()
     def is_donor(self):

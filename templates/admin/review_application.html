@@ -176,18 +176,30 @@
     {% endif %}
 
     <div class="d-flex gap-2">
-      {% if application.status == 'pending' %}
-      <button type="submit" name="action" value="approve" class="btn btn-success">
-        <i class="fa-solid fa-check me-1"></i> Approve
-      </button>
-      <button type="submit" name="action" value="reject" class="btn btn-danger">
-        <i class="fa-solid fa-x me-1"></i> Reject
-      </button>
-      {% else %}
-      <div class="alert alert-{% if application.status == 'approved' %}success{% elif application.status == 'unverified' %}warning{% else %}danger{% endif %} mb-0 w-100">
-        This application has already been <strong>{{ application.get_status_display }}</strong>.
-      </div>
-      {% endif %}
+        {% if application.status == 'pending' %}
+        
+        {% if not application.donor.is_flagged %}
+        <button type="submit" name="action" value="approve" id="approveBtn"
+            class="btn btn-success {% if application.donor.is_flagged %}disabled{% endif %}">
+            <i class="fa-solid fa-check me-1"></i> Approve
+        </button>
+        {% else %}
+        <button class="btn btn-success" disabled title="Cannot approve a flagged user">
+            <i class="fa-solid fa-check me-1"></i> Approve
+        </button>
+        <small class="text-warning align-self-center">
+            <i class="fa-solid fa-flag me-1"></i> User is flagged — unflag to approve
+        </small>
+        {% endif %}
+
+        <button type="submit" name="action" value="reject" class="btn btn-danger">
+            <i class="fa-solid fa-x me-1"></i> Reject
+        </button>
+        {% else %}
+        <div class="alert alert-{% if application.status == 'approved' %}success{% elif application.status == 'unverified' %}warning{% else %}danger{% endif %} mb-0 w-100">
+            This application has already been <strong>{{ application.get_status_display }}</strong>.
+        </div>
+        {% endif %}
     </div>
   </form>
 </div>
@@ -199,5 +211,44 @@
       document.getElementById('adminNote').value = this.dataset.text;
     });
   });
+
+
+  const flagCheckbox = document.getElementById('flagUser');
+  const approveBtn = document.querySelector('button[value="approve"]');
+  const adminNote = document.getElementById('adminNote');
+  const form = document.querySelector('form');
+
+  if (flagCheckbox) {
+    // Disable approve when flag is checked
+    flagCheckbox.addEventListener('change', function() {
+      if (this.checked) {
+        approveBtn.disabled = true;
+        approveBtn.classList.add('disabled');
+      } else {
+        approveBtn.disabled = false;
+        approveBtn.classList.remove('disabled');
+      }
+    });
+
+    // Validate on submit
+    form.addEventListener('submit', function(e) {
+      const isFlagged = flagCheckbox.checked;
+      const note = adminNote.value.trim();
+      const action = document.activeElement.value;
+
+      if (isFlagged && !note) {
+        e.preventDefault();
+        alert('Please provide a rejection reason before flagging this user.');
+        adminNote.focus();
+        return;
+      }
+
+      if (action === 'approve' && isFlagged) {
+        e.preventDefault();
+        alert('Cannot approve a flagged user. Please uncheck the flag or reject instead.');
+        return;
+      }
+    });
+  }
 </script>
 {% endblock %} {% endblock %}
