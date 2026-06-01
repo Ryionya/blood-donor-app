@@ -217,3 +217,7 @@ def switch_role_view(request):
         user.save()
         messages.info(request, 'You are now back in Donor mode.')
         return redirect('cooldown_status')
+
+@login_required
+def faq_view(request):
+    return render(request, 'faq.html')
