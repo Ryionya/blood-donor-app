@@ -247,9 +247,16 @@ def log_donation_view(request):
 
     if request.method == 'POST':
         notes = request.POST.get('notes', '')
+        proof_document = request.FILES.get('proof_document')
+
+        if not proof_document:  # ← add this check
+            messages.error(request, 'Proof of donation is required. Please upload a document.')
+            return render(request, 'donors/log_donation.html', {'profile': profile})
+
         DonationLog.objects.create(
             donor=request.user,
-            notes=notes
+            notes=notes,
+            proof_document=proof_document
         )
         messages.success(request, 'Donation logged! You are now on a 56-day cooldown.')
         return redirect('cooldown_status')

@@ -19,6 +19,7 @@ import os
 
 from django.db import models
 from .models import BloodRequest, ChatMessage
+from donors.models import DonorProfile, Notification, DonationLog
 
 
 
@@ -352,6 +353,17 @@ def respond_request_view(request, request_id):
         action = request.POST.get('action')
 
         if action == 'accept':
+            
+            # Block if already has an active accepted request
+            already_accepted = BloodRequest.objects.filter(
+                donor=request.user,
+                status='accepted'
+            ).exists()
+
+            if already_accepted:
+                messages.error(request, 'You already have an active accepted request. Please complete your current donation first.')
+                return redirect('incoming_requests')
+    
             blood_request.status = 'accepted'
             blood_request.responded_at = timezone.now()
             blood_request.save()
@@ -565,7 +577,7 @@ def chat_view(request, request_id):
     
     # Determine if chat is read only
     # Chat becomes read only when donation is logged
-    is_read_only = DonorProfile.objects.filter(
+    is_read_only = DonationLog.objects.filter(
         donor=blood_request.donor,
         donated_at__gte=blood_request.responded_at
     ).exists()

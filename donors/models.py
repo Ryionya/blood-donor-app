@@ -68,6 +68,11 @@ class DonationLog(models.Model):
     donor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='donation_logs')
     donated_at = models.DateTimeField(default=timezone.now)
     notes = models.TextField(blank=True)
+    proof_document = models.FileField(
+        upload_to='donations/proofs/',
+        blank=True,
+        null=True
+    )
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
