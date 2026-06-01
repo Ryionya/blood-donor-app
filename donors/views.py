@@ -294,10 +294,18 @@ def cooldown_status_view(request):
         delta = profile.cooldown_until - timezone.now()
         days_remaining = delta.days
 
+    # Check if donor has a pending unverified log
+    has_pending_log = DonationLog.objects.filter(
+        donor=request.user,
+        is_verified=False,
+        is_rejected=False
+    ).exists()
+
     return render(request, 'donors/cooldown_status.html', {
         'profile': profile,
         'donation_logs': donation_logs,
         'days_remaining': days_remaining,
+        'has_pending_log': has_pending_log,
     })
 
 
