@@ -148,6 +148,18 @@
 
                     <button type="submit" class="btn btn-danger w-100">Save Profile</button>
                 </form>
+
+                <!-- Security Section -->
+                <hr class="mt-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="fw-semibold text-uppercase text-muted mb-0">Security</h6>
+                        <small class="text-muted">Manage your password</small>
+                    </div>
+                    <a href="{% url 'change_password' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-lock me-1"></i> Change Password
+                    </a>
+                </div>
             </div>
         </div>
     </div>

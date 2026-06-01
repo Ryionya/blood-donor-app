@@ -87,22 +87,19 @@ def browse_donors_view(request):
         is_available=True,
     ).exclude(user=request.user).select_related('user')
 
-    # ── Blood type compatibility filter ───────────────────────────────
-    # 'search_blood_type' ang gagamitin sa filter query at AI recommendation.
-    # Kapag walang pinili sa filter UI, gagamitin ang user_blood_type para tugma pa rin ang listahan at AI.
-    search_blood_type = blood_type or user_blood_type
-
-    if search_blood_type:
-        compatible_types = COMPATIBLE_DONORS.get(search_blood_type, [search_blood_type])
-        donors = donors.filter(blood_type__in=compatible_types)
+    # ── Blood type filter ─────────────────────────────────────────────
+    if blood_type:
+        # User explicitly picked a blood type — show only that exact type
+        donors = donors.filter(blood_type=blood_type)
+    elif user_blood_type:
+        # No filter selected — default to showing all compatible types for the recipient
+        compatible_types = COMPATIBLE_DONORS.get(user_blood_type, [])
+        if compatible_types:
+            donors = donors.filter(blood_type__in=compatible_types)
 
     # ── Location filter ───────────────────────────────────────────────
     if location:
         donors = donors.filter(location__icontains=location)
-
-    # Temporary: filter to compatible types until M1's backend logic is merged
-    if compatible_types and not blood_type:
-        donors = donors.filter(blood_type__in=compatible_types)
 
     # Sort: exact match → compatible → everything else
     def sort_key(donor):

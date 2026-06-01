@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import RegisterForm, ProfileSetupForm, DonorProfileForm, RecipientProfileForm
@@ -184,6 +184,22 @@ def profile_setup_view(request):
         'donor_profile': donor_profile,
     })
 
+@login_required
+def change_password_view(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            form.save()
+            # Keep the user logged in after password change
+            update_session_auth_hash(request, form.user)
+            messages.success(request, 'Your password was updated successfully!')
+            return redirect('profile_setup')
+        else:
+            messages.error(request, 'Please fix the errors below.')
+    else:
+        form = PasswordChangeForm(user=request.user)
+ 
+    return render(request, 'accounts/change_password.html', {'form': form})
 
 @login_required
 def switch_role_view(request):

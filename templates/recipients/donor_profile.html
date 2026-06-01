@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load donor_tags %}
 {% block title %}{{ donor.user.get_full_name|default:donor.user.username }} — BloodLink{% endblock %}
 
 {% block content %}
@@ -19,9 +20,24 @@
         </div>
         <div class="card-type-label">DONOR CARD</div>
 
-        <div class="donor-avatar d-inline-flex align-items-center justify-content-center mb-2">
-          {{ donor.user.get_full_name|default:donor.user.username|first|upper }}
-        </div>
+        {% if accepted_request %}
+          {% if donor.user.profile_picture %}
+            <img src="{{ donor.user.profile_picture.url }}"
+                class="donor-avatar"
+                style="object-fit:cover;"
+                alt="{{ donor.user.username }}">
+          {% else %}
+            <div class="donor-avatar d-inline-flex align-items-center justify-content-center mb-2"
+                style="background:{{ donor.user.id|avatar_color }} !important; color:white !important; font-size:2rem;">
+              {{ donor.user.get_full_name|default:donor.user.username|first|upper }}
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="donor-avatar d-inline-flex align-items-center justify-content-center mb-2"
+              style="background:white !important; border:2px solid #f0f0f0;">
+            <i class="fa-solid fa-heart-pulse" style="font-size:2rem;color:{{ donor.user.id|avatar_color }};"></i>
+          </div>
+        {% endif %}
           <h4 class="donor-name mb-0 fw-bold">
             {% if accepted_request %}
               {{ donor.user.get_full_name|default:donor.user.username }}
