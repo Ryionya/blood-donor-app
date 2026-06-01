@@ -19,6 +19,7 @@ class DonorProfile(models.Model):
     bio = models.TextField(blank=True)
     location = models.CharField(max_length=255, blank=True, null=True)
     government_id = models.FileField(upload_to='donor/ids/', blank=True, null=True)
+    blood_type_locked = models.BooleanField(default=False)
     verified_at = models.DateTimeField(null=True, blank=True)
     verification_expires_at = models.DateTimeField(null=True, blank=True)
 

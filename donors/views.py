@@ -144,6 +144,7 @@ def admin_review_application(request, pk):
             profile.is_verified = True
             profile.verified_at = timezone.now()
             profile.verification_expires_at = timezone.now() + timedelta(days=90)
+            profile.blood_type_locked = True
             profile.save()
 
             local_expires = timezone.localtime(profile.verification_expires_at)

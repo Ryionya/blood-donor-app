@@ -76,6 +76,7 @@ class RecipientProfile(models.Model):
         null=True
     )
     blood_type = models.CharField(max_length=5, choices=BLOOD_TYPE_CHOICES)
+    blood_type_locked = models.BooleanField(default=False) 
 
     def __str__(self):
         return f"{self.user.username} — Recipient Profile"

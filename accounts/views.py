@@ -146,9 +146,9 @@ def profile_setup_view(request):
             donor_instance = donor_form.save(commit=False)
 
 
-            if donor_profile and donor_profile.is_verified:
+            if donor_profile and donor_profile.blood_type_locked:  # WAS: donor_profile.is_verified
                 donor_instance.blood_type = donor_profile.blood_type
-            
+                    
             # Handle government ID upload
             if 'donor_government_id' in request.FILES:
                 donor_instance.government_id = request.FILES['donor_government_id']
@@ -161,6 +161,13 @@ def profile_setup_view(request):
                 recipient_instance.government_id = request.FILES['government_id']
             else:
                 recipient_instance.government_id = recipient_profile.government_id
+
+            # Lock blood type once set
+            if recipient_profile and recipient_profile.blood_type_locked:
+                recipient_instance.blood_type = recipient_profile.blood_type
+            elif recipient_instance.blood_type:
+                recipient_instance.blood_type_locked = True  # Lock it now on first save
+
             recipient_instance.save()
 
         messages.success(request, 'Profile updated successfully!')
