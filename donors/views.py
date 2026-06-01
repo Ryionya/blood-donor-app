@@ -16,7 +16,7 @@ from recipients.models import BloodRequest
 from accounts.models import User
 from datetime import timedelta
 from django.utils import timezone
-
+from dateutil.relativedelta import relativedelta
 
 @login_required
 def apply_donor(request):
@@ -143,7 +143,7 @@ def admin_review_application(request, pk):
             profile = application.donor.donor_profile
             profile.is_verified = True
             profile.verified_at = timezone.now()
-            profile.verification_expires_at = timezone.now() + timedelta(days=90)
+            profile.verification_expires_at = timezone.now() + relativedelta(months=3)
             profile.blood_type_locked = True
             profile.save()
 
