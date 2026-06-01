@@ -21,38 +21,43 @@
   <div class="notification-wrapper">
     {% for notif in notifications %}
 
-    {% if notif.notif_type == 'request' %}
-    <a href="{% url 'incoming_requests' %}" class="notification-card text-decoration-none">
-    {% elif notif.notif_type == 'accepted' or notif.notif_type == 'rejected' %}
-    <a href="{% url 'my_requests' %}" class="notification-card text-decoration-none">
-    {% else %}
-    <a href="{% url 'my_application' %}" class="notification-card text-decoration-none">
-    {% endif %}
+{% if notif.notif_type == 'request' %}
+<a href="{% url 'incoming_requests' %}" class="notification-card text-decoration-none">
+{% elif notif.notif_type == 'accepted' or notif.notif_type == 'rejected' or notif.notif_type == 'declined' or notif.notif_type == 'request_approved' or notif.notif_type == 'request_rejected' %}
+<a href="{% url 'my_requests' %}" class="notification-card text-decoration-none">
+{% else %}
+<a href="{% url 'my_application' %}" class="notification-card text-decoration-none">
+{% endif %}
 
       <div class="card border-0 shadow-sm rounded-4 p-3">
         <div class="d-flex align-items-start gap-3">
           <!-- ICON -->
           <div>
-            {% if notif.notif_type == 'approved' %}
-            <div class="notif-icon bg-success-subtle text-success">
-              <i class="fa-solid fa-check"></i>
-            </div>
+{% if notif.notif_type == 'approved' %}
+<div class="notif-icon bg-success-subtle text-success">
+  <i class="fa-solid fa-check"></i>
+</div>
 
-            {% elif notif.notif_type == 'rejected' %}
-            <div class="notif-icon bg-danger-subtle text-danger">
-              <i class="fa-solid fa-xmark"></i>
-            </div>
+{% elif notif.notif_type == 'rejected' or notif.notif_type == 'declined' or notif.notif_type == 'request_rejected' %}
+<div class="notif-icon bg-danger-subtle text-danger">
+  <i class="fa-solid fa-xmark"></i>
+</div>
 
-            {% elif notif.notif_type == 'request' %}
-            <div class="notif-icon bg-warning-subtle text-warning">
-              <i class="fa-solid fa-droplet"></i>
-            </div>
+{% elif notif.notif_type == 'accepted' or notif.notif_type == 'request_approved' %}
+<div class="notif-icon bg-success-subtle text-success">
+  <i class="fa-solid fa-check"></i>
+</div>
 
-            {% else %}
-            <div class="notif-icon bg-primary-subtle text-primary">
-              <i class="fa-solid fa-bell"></i>
-            </div>
-            {% endif %}
+{% elif notif.notif_type == 'request' %}
+<div class="notif-icon bg-warning-subtle text-warning">
+  <i class="fa-solid fa-droplet"></i>
+</div>
+
+{% else %}
+<div class="notif-icon bg-primary-subtle text-primary">
+  <i class="fa-solid fa-bell"></i>
+</div>
+{% endif %}
           </div>
 
           <!-- CONTENT -->

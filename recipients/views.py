@@ -392,7 +392,7 @@ def respond_request_view(request, request_id):
 
             Notification.objects.create(
                 user=blood_request.recipient,
-                notif_type='rejected',
+                notif_type='declined',
                 message=f'{request.user.get_full_name() or request.user.username} declined your blood request.',
             )
 
