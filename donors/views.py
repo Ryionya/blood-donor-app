@@ -209,6 +209,7 @@ def admin_dashboard(request):
         "total_users": User.objects.filter(role__in=['donor', 'recipient']).count(),
         "recent_pending": recent_pending,
         "pending_requests_count": BloodRequest.objects.filter(status='pending_admin').count(),
+        "donation_log_count": DonationLog.objects.filter(is_verified=False, is_rejected=False).count(),
     }
 
     return render(request, "admin/dashboard.html", context)
@@ -258,7 +259,7 @@ def log_donation_view(request):
             notes=notes,
             proof_document=proof_document
         )
-        messages.success(request, 'Donation logged! You are now on a 56-day cooldown.')
+        messages.success(request, 'Donation logged! Your proof is pending admin verification. Cooldown will start once verified.')
         return redirect('cooldown_status')
 
     return render(request, 'donors/log_donation.html', {
@@ -466,4 +467,77 @@ def admin_user_profile(request, pk):
         'recipient_profile': recipient_profile,
         'applications': applications,
         'requests': requests,
+    })
+    
+@login_required
+@admin_required
+def admin_donation_log_queue(request):
+    logs = DonationLog.objects.filter(
+        is_verified=False
+    ).select_related('donor').order_by('-donated_at')
+
+    return render(request, 'admin/donation_log_queue.html', {
+        'logs': logs,
+        'count': logs.count(),
+    })
+
+
+@login_required
+@admin_required
+def admin_review_donation_log(request, pk):
+    log = get_object_or_404(DonationLog, pk=pk)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        note = request.POST.get('admin_note', '').strip()
+
+        if action == 'approve':
+            log.is_verified = True
+            log.admin_notes = note
+            log.reviewed_at = timezone.now()
+            log.save()
+            
+            # NOW set the cooldown after admin verification
+            profile = log.donor.donor_profile
+            profile.cooldown_until = log.donated_at + timedelta(days=56)
+            profile.is_available = False
+            profile.save()
+
+            send_notification(
+                user=log.donor,
+                notif_type='approved',
+                message=f'Your donation log has been verified by the admin. '
+                        f'Your 56-day cooldown is now active.'
+            )
+            messages.success(request, f"{log.donor.username}'s donation log has been verified.")
+
+        elif action == 'reject':
+            if not note:
+                messages.error(request, 'Please provide a rejection reason.')
+                return redirect('admin_review_donation_log', pk=pk)
+
+            log.is_verified = False
+            log.is_rejected = True
+            log.admin_notes = note
+            log.reviewed_at = timezone.now()
+            log.save()
+
+            # Reset cooldown since donation was rejected
+            profile = log.donor.donor_profile
+            profile.cooldown_until = None
+            profile.is_available = True
+            profile.save()
+
+            send_notification(
+                user=log.donor,
+                notif_type='rejected',
+                message=f'Your donation log was not verified. Reason: {note}. '
+                        f'Your availability has been restored.'
+            )
+            messages.warning(request, f"{log.donor.username}'s donation log has been rejected.")
+
+        return redirect('admin_donation_log_queue')
+
+    return render(request, 'admin/review_donation_log.html', {
+        'log': log,
     })

@@ -76,6 +76,8 @@
                 <th>#</th>
                 <th>Date</th>
                 <th>Notes</th>
+                <th>Proof</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
@@ -84,6 +86,29 @@
                 <td>{{ forloop.counter }}</td>
                 <td>{{ log.donated_at|date:"F d, Y" }}</td>
                 <td>{{ log.notes|default:"No notes" }}</td>
+                <td>
+                    {% if log.proof_document %}
+                        <a href="{{ log.proof_document.url }}"
+                        target="_blank"
+                        class="btn btn-outline-secondary btn-sm">
+                            <i class="fa-solid fa-file me-1"></i> View
+                        </a>
+                    {% else %}
+                        <span class="text-muted small">No proof</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if log.is_verified %}
+                        <span class="badge bg-success">✅ Verified</span>
+                    {% elif log.is_rejected %}
+                        <span class="badge bg-danger">❌ Rejected</span>
+                        {% if log.admin_notes %}
+                            <small class="d-block text-muted mt-1">{{ log.admin_notes }}</small>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-warning text-dark">⏳ Pending Review</span>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>

@@ -73,13 +73,13 @@ class DonationLog(models.Model):
         blank=True,
         null=True
     )
+    is_verified = models.BooleanField(default=False)
+    is_rejected = models.BooleanField(default=False)
+    admin_notes = models.TextField(blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        profile = self.donor.donor_profile
-        profile.cooldown_until = self.donated_at + timedelta(days=56)
-        profile.is_available = False
-        profile.save()
 
     def __str__(self):
         return f"{self.donor.username} donated on {self.donated_at.date()}"

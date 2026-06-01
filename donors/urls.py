@@ -19,6 +19,8 @@ urlpatterns = [
     path('admin-panel/users/',              views.admin_user_list,              name='admin_user_list'),
     path('admin-panel/users/<int:pk>/',     views.admin_user_profile,           name='admin_user_profile'),
     path('admin-panel/users/<int:pk>/unflag/', views.admin_unflag_user,         name='admin_unflag_user'),
+    path('admin-panel/donation-logs/',      views.admin_donation_log_queue,     name='admin_donation_log_queue'),
+    path('admin-panel/donation-logs/<int:pk>/', views.admin_review_donation_log, name='admin_review_donation_log'),
 
     # Donation tracking
     path('log-donation/',                   views.log_donation_view,            name='log_donation'),

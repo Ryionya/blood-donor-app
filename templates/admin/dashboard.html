@@ -126,10 +126,10 @@
     </div>
 
     <div class="col-md-6">
-        <a href="{% url 'admin_donor_list' %}" class="text-decoration-none">
+        <a href="{% url 'admin_donation_log_queue' %}" class="text-decoration-none">
             <div class="dashboard-card quick-card">
-                <h6>Donor list</h6>
-                <p>View all approved donors</p>
+                <h6>Donation Logs Queue</h6>
+                <p>{{ donation_log_count }} pending verification</p>
             </div>
         </a>
     </div>
