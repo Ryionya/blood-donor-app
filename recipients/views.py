@@ -5,7 +5,6 @@ from django.http import JsonResponse
 from django.utils import timezone
 
 from accounts.models import User
-from donors.models import DonorProfile, Notification
 from recipients.models import BloodRequest, RecipientProfile
 from webpush import send_user_notification
 
@@ -580,6 +579,10 @@ def chat_view(request, request_id):
     is_read_only = DonationLog.objects.filter(
         donor=blood_request.donor,
         donated_at__gte=blood_request.responded_at
+    ).exists() or DonorProfile.objects.filter(
+        user=blood_request.donor,
+        cooldown_until__isnull=False,
+        cooldown_until__gte=blood_request.responded_at
     ).exists()
 
     return render(request, 'recipients/chat.html', {
@@ -606,9 +609,13 @@ def send_message_view(request, request_id):
         return JsonResponse({'error': 'Not allowed'}, status=403)
 
     # Check if read only
-    is_read_only = DonorProfile.objects.filter(
+    is_read_only = DonationLog.objects.filter(
+        donor=blood_request.donor,
+        donated_at__gte=blood_request.responded_at
+    ).exists() or DonorProfile.objects.filter(
         user=blood_request.donor,
-        cooldown_until__isnull=False
+        cooldown_until__isnull=False,
+        cooldown_until__gte=blood_request.responded_at
     ).exists()
 
     if is_read_only:
@@ -648,6 +655,7 @@ def send_message_view(request, request_id):
             user=other_user,
             notif_type='request',
             message=f'💬 {request.user.username}: {message_text[:50]}',
+            link=f'/recipients/chat/{request_id}/',
         )
 
         return JsonResponse({

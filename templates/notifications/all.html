@@ -21,12 +21,14 @@
   <div class="notification-wrapper">
     {% for notif in notifications %}
 
-{% if notif.notif_type == 'request' %}
-<a href="{% url 'incoming_requests' %}" class="notification-card text-decoration-none">
+{% if notif.link %}
+<a href="{% url 'mark_single_notification_read' notif.pk %}?next={{ notif.link }}" class="notification-card text-decoration-none">
+{% elif notif.notif_type == 'request' %}
+<a href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'incoming_requests' %}" class="notification-card text-decoration-none">
 {% elif notif.notif_type == 'accepted' or notif.notif_type == 'rejected' or notif.notif_type == 'declined' or notif.notif_type == 'request_approved' or notif.notif_type == 'request_rejected' %}
-<a href="{% url 'my_requests' %}" class="notification-card text-decoration-none">
+<a href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'my_requests' %}" class="notification-card text-decoration-none">
 {% else %}
-<a href="{% url 'my_application' %}" class="notification-card text-decoration-none">
+<a href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'my_application' %}" class="notification-card text-decoration-none">
 {% endif %}
 
       <div class="card border-0 shadow-sm rounded-4 p-3">

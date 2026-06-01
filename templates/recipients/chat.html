@@ -7,7 +7,11 @@
 
         <!-- Header -->
         <div class="d-flex align-items-center gap-3 mb-3">
-            <a href="{% url 'my_requests' %}" class="btn btn-sm btn-outline-secondary">← Back</a>
+            {% if request.user == blood_request.donor %}
+    <a href="{% url 'incoming_requests' %}" class="btn btn-sm btn-outline-secondary">← Back</a>
+{% else %}
+    <a href="{% url 'my_requests' %}" class="btn btn-sm btn-outline-secondary">← Back</a>
+{% endif %}
             <div>
                 <h5 class="mb-0 fw-bold">
                     💬 Chat with {{ other_user.username }}

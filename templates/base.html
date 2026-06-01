@@ -165,7 +165,10 @@
 
                           {% for notif in recent_notifications %}
                             <li>
-{% if notif.notif_type == 'request' %}
+{% if notif.link %}
+  <a class="dropdown-item py-2 rounded-3 {% if not notif.is_read %}bg-secondary-subtle border-start border-4 border-danger fw-semibold{% endif %}"
+    href="{% url 'mark_single_notification_read' notif.pk %}?next={{ notif.link }}">
+{% elif notif.notif_type == 'request' %}
   <a class="dropdown-item py-2 rounded-3 {% if not notif.is_read %}bg-secondary-subtle border-start border-4 border-danger fw-semibold{% endif %}"
     href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'incoming_requests' %}">
 {% elif notif.notif_type == 'accepted' or notif.notif_type == 'rejected' or notif.notif_type == 'declined' or notif.notif_type == 'request_approved' or notif.notif_type == 'request_rejected' %}
