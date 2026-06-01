@@ -103,7 +103,7 @@ def browse_donors_view(request):
 
     # ── Location filter ───────────────────────────────────────────────
     if location:
-        donors = donors.filter(location__icontains=location)
+        donors = donors.filter(user__location__icontains=location)
 
     # Sort: exact match → compatible → everything else
     def sort_key(donor):

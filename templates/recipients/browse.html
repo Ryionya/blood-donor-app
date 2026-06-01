@@ -3,7 +3,11 @@
 {% block title %}Find a Donor — BloodLink{% endblock %}
 
 {% block content %}
-
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{{ request.META.HTTP_REFERER|default:'/' }}" class="btn btn-outline-secondary btn-sm">
+      ← Back
+    </a>
+</div>
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
     <div class="d-flex align-items-center gap-2">
@@ -143,7 +147,7 @@
               <i class="fa-solid fa-circle-check"></i>
             </span>
           </h5>
-          <p class="text-muted small mb-1">📍 {{ donor.location|default:"Location not set" }}</p>
+          <p class="text-muted small mb-1">📍 {{ donor.user.location|default:"Location not set" }}</p>
           {% if donor.bio %}
             <p class="text-muted small mb-0">{{ donor.bio|truncatechars:80 }}</p>
           {% endif %}

@@ -259,6 +259,9 @@
             {% webpush_header %}
         {% endif %}
 
+        <!-- Select2 JS -->
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
         {% block extra_js %}{% endblock %}
 
     {% if user.is_authenticated %}
@@ -306,7 +309,7 @@
         </div>
     </div>
 
-        <!-- PWA Install Script -->
+    <!-- PWA Install Script -->
     <script>
     let deferredPrompt;
 
@@ -314,31 +317,31 @@
     const installBtn = document.getElementById('installBtn');
     const closeInstallCard = document.getElementById('closeInstallCard');
 
+    // Use a session-specific key tied to the Django user
+    const dismissKey = 'pwa_dismissed_{{ request.user.pk }}_{{ request.session.session_key }}';
+
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
-
         deferredPrompt = e;
 
-        installCard.classList.remove('d-none');
+        if (!sessionStorage.getItem(dismissKey)) {
+            installCard.classList.remove('d-none');
+        }
     });
 
     installBtn.addEventListener('click', async () => {
-
         if (!deferredPrompt) return;
-
         deferredPrompt.prompt();
-
         const { outcome } = await deferredPrompt.userChoice;
-
         console.log('Install result:', outcome);
-
         deferredPrompt = null;
-
         installCard.classList.add('d-none');
+        sessionStorage.setItem(dismissKey, 'true');
     });
 
     closeInstallCard.addEventListener('click', () => {
         installCard.classList.add('d-none');
+        sessionStorage.setItem(dismissKey, 'true');
     });
     </script>
     {% endif %}
@@ -596,8 +599,6 @@
     })();
     </script>
 
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     </body> 
     </html>
