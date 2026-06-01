@@ -17,6 +17,9 @@ import json as json_module
 from django.conf import settings
 import os
 
+from django.db import models
+
+
 
 
 # ─────────────────────────────────────────────
@@ -417,6 +420,7 @@ def voice_intent_view(request):
             active_role=request.user.active_role
         )
 
+        # If navigation intent, resolve the URL
         if intent.get('type') == 'navigate':
             page = intent.get('page')
             try:
@@ -425,11 +429,64 @@ def voice_intent_view(request):
             except Exception:
                 intent['type'] = 'unknown'
 
+        # If logout intent
         if intent.get('type') == 'logout':
             intent['url'] = reverse('logout')
 
-        return JsonResponse(intent)
+        # If donor search intent — find donor by name
+        if intent.get('type') == 'donor_search':
+            name = intent.get('name', '').strip()
+            if name:
+                try:
+                    from django.db.models import Q
 
+                    # Remove spaces for username matching
+                    # e.g. "Pedro Penduko" → "PedroPenduko"
+                    name_no_space = name.replace(' ', '')
+                    name_parts = name.split()
+
+                    query = (
+                        # Username match (highest priority — visible on browse page)
+                        Q(user__username__icontains=name) |
+                        Q(user__username__icontains=name_no_space) |
+                        # Individual word match against username
+                        Q(user__username__icontains=name_parts[0]) 
+                    )
+
+                    # Add remaining name parts
+                    for part in name_parts[1:]:
+                        query |= Q(user__username__icontains=part)
+
+                    donor = DonorProfile.objects.filter(
+                        is_verified=True,
+                        is_available=True,
+                    ).filter(query).exclude(user=request.user).first()
+
+                    if donor:
+                        intent['donor_id'] = donor.pk  
+                        intent['donor_name'] = donor.user.username
+                        intent['url'] = reverse('donor_profile', kwargs={'donor_id': donor.pk})
+                    else:
+                        intent['type'] = 'donor_not_found'
+                        intent['searched_name'] = name
+                except Exception:
+                    intent['type'] = 'unknown'
+
+        # If donor action intent
+        if intent.get('type') == 'donor_action':
+            action = intent.get('action')
+            # Get donor_id from the referrer URL if on donor profile page
+            referer = request.META.get('HTTP_REFERER', '')
+            import re
+            match = re.search(r'/donor/(\d+)/', referer)
+            if match:
+                donor_id = int(match.group(1))
+                intent['donor_id'] = donor_id
+                if action == 'send_request':
+                    intent['url'] = reverse('send_request', kwargs={'donor_id': donor_id})
+
+        return JsonResponse(intent)
+    
     except Exception as e:
         return JsonResponse({'type': 'unknown'})
 

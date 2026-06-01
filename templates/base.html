@@ -564,7 +564,50 @@
                         speak(`Finding ${bloodTypeText} donors in ${locationText}.`, 'en-US');
                         setTimeout(() => window.location.href = url, 3500);
                     }
+                
+                } else if (intent.type === 'donor_search' && intent.url) {
+                    showToast(`👤 Found <strong>${intent.donor_name}</strong> — opening profile…`, 'success');
+                    speak(`Found ${intent.donor_name}. Opening profile.`, 'en-US');
+                    setTimeout(() => window.location.href = intent.url, 1500);
+                
+                } else if (intent.type === 'donor_action') {
+                    const action = intent.action;
 
+                    if (action === 'send_request') {
+                        // Check if we have a URL (from server) or need to extract from page
+                        if (intent.url) {
+                            showToast('📋 Opening donation request form…', 'success');
+                            speak('Opening donation request form.', 'en-US');
+                            setTimeout(() => window.location.href = intent.url, 1500);
+                        } else {
+                            // Try to find the send request button on the page
+                            const sendBtn = document.querySelector('a[href*="request"]');
+                            if (sendBtn) {
+                                showToast('📋 Opening donation request form…', 'success');
+                                speak('Opening donation request form.', 'en-US');
+                                setTimeout(() => sendBtn.click(), 1500);
+                            } else {
+                                showToast('⚠️ Please navigate to a donor profile first.', 'warning');
+                                speak('Please navigate to a donor profile first.', 'en-US');
+                            }
+                        }
+
+                    } else if (action === 'download_card') {
+                        // Check if downloadCard function exists on current page
+                        if (typeof downloadCard === 'function') {
+                            showToast('📄 Downloading donor card…', 'success');
+                            speak('Downloading donor card.', 'en-US');
+                            setTimeout(() => downloadCard(), 1500);
+                        } else {
+                            showToast('⚠️ Please navigate to a donor profile first.', 'warning');
+                            speak('Please navigate to a donor profile first.', 'en-US');
+                        }
+                    }
+                    
+                } else if (intent.type === 'donor_not_found') {
+                    showToast(`⚠️ No donor found named "<strong>${intent.searched_name}</strong>". Try browsing instead.`, 'warning');
+                    speak(`No donor found named ${intent.searched_name}. Try browsing instead.`, 'en-US');
+                    
                 } else {
                     showToast('⚠️ Command not recognized. Try: <em>"Go to browse page"</em> or <em>"Find A+ in Calamba"</em>', 'warning');
                     speak('Command not recognized. Please try again.', 'en-US');

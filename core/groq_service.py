@@ -12,22 +12,30 @@ def get_client():
 
 # All navigable pages with their URL names and descriptions
 NAVIGATION_PAGES = {
-    'browse_donors':            'Browse or find blood donors',
-    'my_requests':              'My blood requests, requests I sent',
-    'incoming_requests':        'Incoming donation requests, requests received',
-    'cooldown_status':          'Cooldown tracker, donation tracker, my donations',
-    'log_donation':             'Log a completed donation',
-    'my_application':           'My donor application, application status',
-    'apply_donor':              'Apply as a donor, donor application form',
-    'profile_setup':            'My profile, edit profile',
-    'notifications_page':       'Notifications, my notifications',
-    'admin_dashboard':          'Admin dashboard, admin panel',
-    'admin_application_queue':  'Review queue, pending applications',
-    'admin_manage_users':       'Manage users, all accounts',
-    'admin_donor_list':         'Donor list, verified donors',
-    'admin_stats':              'Stats, statistics, requests and donations',
-    'logout':                   'Logout, log out, sign out',
+    # Accounts (Donors & Recipients)
+    'browse_donors':            'Browse or find blood donors, search donors',
+    'my_requests':              'My blood requests, requests I sent, sent requests',
+    'incoming_requests':        'Incoming donation requests, requests received, incoming',
+    'cooldown_status':          'Cooldown tracker, donation tracker, my donations, cooldown',
+    'log_donation':             'Log a completed donation, I donated, log donation',
+    'my_application':           'My donor application, application status, my application',
+    'apply_donor':              'Apply as a donor, donor application form, apply',
+    'profile_setup':            'My profile, edit profile, update profile, profile settings',
+    'change_password':          'Change password, update password, new password, edit password',
+    'notifications_page':       'Notifications, my notifications, alerts',
     'switch_role':              'Switch role, switch to recipient, switch to donor, change role',
+    'send_request':   'Send donation request, request blood, ask for donation, send request to donor',
+    'download_card':  'Download donor card, print donor card, save donor card, download card',
+    'logout':                   'Logout, log out, sign out',
+
+    # Admin
+    'admin_dashboard':          'Admin dashboard, admin panel, dashboard',
+    'admin_application_queue':  'Review queue, pending applications, application queue',
+    'admin_manage_users':       'Manage users, all accounts, user management',
+    'admin_donor_list':         'Donor list, verified donors, all donors',
+    'admin_stats':              'Stats, statistics, requests and donations, reports',
+    'admin_request_queue':      'Request queue, pending requests, blood request queue',
+    'admin_user_list':          'User list, all users, manage accounts',
 }
 
 
@@ -76,6 +84,15 @@ For search with only blood type:
 For search with only location:
 {{"type": "search", "blood_type": "", "location": "Santa Rosa"}}
 
+For viewing a specific donor profile:
+{{"type": "donor_search", "name": "donor name here"}}
+
+For sending a donation request to current donor:
+{{"type": "donor_action", "action": "send_request"}}
+
+For downloading/printing donor card:
+{{"type": "donor_action", "action": "download_card"}}
+
 For logout:
 {{"type": "logout"}}
 
@@ -88,7 +105,14 @@ Rules:
 - Extract Philippine city/municipality names accurately
 - Handle Filipino words: "pumunta" = go to, "hanapin" = find, "ipakita" = show, "mag-logout" = logout
 - Handle mixed Filipino-English (Taglish)
-- Return ONLY the JSON, no explanation, no markdown"""
+- Return ONLY the JSON, no explanation, no markdown
+- If the command mentions viewing, opening, or checking a specific donor by name, return donor_search type
+- Extract the donor's name from the command
+- Examples: "view Juan's profile", "open profile of Maria", "tingnan ang profile ni Carlo
+- If the command mentions sending a request, asking for blood, or requesting donation, return donor_action with action send_request
+- If the command mentions downloading, printing, or saving a donor card, return donor_action with action download_card
+- These actions only make sense on a donor profile page
+- Filipino: "mag-request" = send request, "i-download" = download, "i-print" = print"""
 
     try:
         response = client.chat.completions.create(
