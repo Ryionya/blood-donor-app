@@ -15,7 +15,7 @@ class DonorProfile(models.Model):
     blood_type = models.CharField(max_length=5, choices=BLOOD_TYPE_CHOICES, blank=True)
     is_verified = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
-    is_blood_type_locked = models.BooleanField(default=False)
+    blood_type_locked = models.BooleanField(default=False)
     cooldown_until = models.DateTimeField(null=True, blank=True)
     bio = models.TextField(blank=True)
     location = models.CharField(max_length=255, blank=True, null=True)
