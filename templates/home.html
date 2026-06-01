@@ -15,38 +15,78 @@
 
 {% else %}
 
-<!-- ── Header: Greeting + Role ──────────────────────────────── -->
-<div class="mb-4">
-  <h3 class="fw-bold mb-1">
-    Welcome back, {{ user.first_name|default:user.username }}! 👋
-  </h3>
+<!-- ── Header Card ──────────────────────────────────────────── -->
+<div class="rounded-4 p-4 mb-4 d-flex align-items-center gap-4"
+     style="background: linear-gradient(135deg, #fff0f0 0%, #ffe4e4 60%, #ffd6d6 100%);
+            border: 1px solid rgba(192,57,43,0.1);">
 
-  {% if user.role == 'donor' %}
-    {% if user.active_role == 'donor' %}
-      <span class="badge fs-6 px-3 py-2" style="background-color:#c0392b;">🩸 Donor</span>
-      {% if donor_profile.is_verified %}
-        <span class="badge bg-primary fs-6 px-3 py-2 ms-1">
-          <i class="fa-solid fa-circle-check me-1"></i>Verified
-        </span>
-      {% else %}
-        <span class="badge bg-secondary fs-6 px-3 py-2 ms-1">Unverified</span>
-      {% endif %}
+  <!-- Profile Picture -->
+  <div style="flex-shrink:0;">
+    {% if user.profile_picture %}
+      <img src="{{ user.profile_picture.url }}"
+           alt="{{ user.username }}"
+           style="width:88px; height:88px; border-radius:50%; object-fit:cover;
+                  border:3px solid #c0392b; box-shadow:0 4px 12px rgba(192,57,43,0.2);">
     {% else %}
-      <span class="badge bg-warning text-dark fs-6 px-3 py-2">💉 Browsing as Recipient</span>
+      <div style="width:88px; height:88px; border-radius:50%; background:#c0392b;
+                  border:3px solid rgba(192,57,43,0.3); display:flex; align-items:center;
+                  justify-content:center; color:#fff; font-weight:700; font-size:34px;
+                  box-shadow:0 4px 12px rgba(192,57,43,0.2);">
+        {{ user.first_name|first|default:user.username|first|upper }}
+      </div>
     {% endif %}
-    <div class="mt-2">
-      <a href="{% url 'switch_role' %}" class="text-muted small text-decoration-none">
+  </div>
+
+  <!-- Greeting + Role -->
+  <div>
+    <h4 class="fw-bold mb-2" style="color:#1a1a1a;">
+      Welcome back, {{ user.first_name|default:user.username }}!
+    </h4>
+
+    <div class="d-flex flex-wrap gap-2 mb-2">
+      {% if user.role == 'donor' %}
         {% if user.active_role == 'donor' %}
-          ⇄ Switch to Recipient mode
+          <span class="badge fs-6 px-3 py-2"
+                style="background-color:#c0392b;">
+            <i class="fa-solid fa-droplet me-1"></i>Donor
+          </span>
+          {% if donor_profile.is_verified %}
+            <span class="badge fs-6 px-3 py-2"
+                  style="background-color:#185fa5;">
+              <i class="fa-solid fa-circle-check me-1"></i>Verified
+            </span>
+          {% else %}
+            <span class="badge fs-6 px-3 py-2"
+                  style="background-color:#7f8c8d;">
+              <i class="fa-solid fa-clock me-1"></i>Unverified
+            </span>
+          {% endif %}
         {% else %}
-          ⇄ Switch back to Donor mode
+          <span class="badge fs-6 px-3 py-2"
+                style="background-color:#e67e22;">
+            <i class="fa-solid fa-arrows-rotate me-1"></i>Browsing as Recipient
+          </span>
         {% endif %}
-      </a>
+      {% elif user.role == 'recipient' %}
+        <span class="badge fs-6 px-3 py-2"
+              style="background-color:#185fa5;">
+          <i class="fa-solid fa-user-injured me-1"></i>Recipient
+        </span>
+      {% endif %}
     </div>
 
-  {% elif user.role == 'recipient' %}
-    <span class="badge fs-6 px-3 py-2" style="background-color:#185fa5;">💉 Recipient</span>
-  {% endif %}
+    {% if user.role == 'donor' %}
+      <a href="{% url 'switch_role' %}" class="text-decoration-none small" style="color:#c0392b;">
+        <i class="fa-solid fa-arrows-rotate me-1"></i>
+        {% if user.active_role == 'donor' %}
+          Switch to Recipient mode
+        {% else %}
+          Switch back to Donor mode
+        {% endif %}
+      </a>
+    {% endif %}
+  </div>
+
 </div>
 
 <!-- ── Info Cards Row ───────────────────────────────────────── -->
