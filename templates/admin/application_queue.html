@@ -1,16 +1,12 @@
 {% extends 'base.html' %} {% block content %}
 <div class="container mt-4">
   <div class="mb-4">
-    <a
-      href="{% url 'admin_dashboard' %}"
-      class="btn btn-outline-secondary btn-sm"
-    >
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary btn-sm">
       ← Back to Dashboard
     </a>
   </div>
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Pending Applications</h2>
-    <!-- ↓ CHANGED: label updated since queue now includes ID re-checks too -->
     <span class="badge bg-warning text-dark">{{ count }} pending</span>
   </div>
 
@@ -21,7 +17,6 @@
         <th>Name</th>
         <th>Email</th>
         <th>Blood Type</th>
-        <th>Type</th>  <!-- ↓ NEW: distinguish fresh vs re-check -->
         <th>Submitted</th>
         <th>Action</th>
       </tr>
@@ -32,20 +27,9 @@
         <td>{{ app.donor.get_full_name|default:app.donor.username }}</td>
         <td>{{ app.donor.email }}</td>
         <td>{{ app.donor.donor_profile.blood_type }}</td>
-        <!-- ↓ NEW: badge so admin sees at a glance what type of application this is -->
-        <td>
-          {% if app.is_id_recheck %}
-            <span class="badge bg-info text-dark">ID Re-check</span>
-          {% else %}
-            <span class="badge bg-secondary">New Application</span>
-          {% endif %}
-        </td>
         <td>{{ app.submitted_at|date:"M d, Y" }}</td>
         <td>
-          
-            href="{% url 'review_application' app.id %}"
-            class="btn btn-sm btn-outline-primary"
-          >
+          <a href="{% url 'review_application' app.id %}" class="btn btn-sm btn-outline-primary">
             Review
           </a>
         </td>
@@ -56,8 +40,8 @@
   {% else %}
     <div class="text-center py-5">
         <div class="display-1">✅</div>
-        <h5 class="mt-3 fw-bold">No pending requests</h5>
-        <p class="text-muted">All applications requests have been reviewed.</p>
+        <h5 class="mt-3 fw-bold">No pending applications</h5>
+        <p class="text-muted">All applications have been reviewed.</p>
     </div>
   {% endif %}
 </div>

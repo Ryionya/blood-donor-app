@@ -1,5 +1,5 @@
 {% extends 'base.html' %} {% block content %}
-
+{% load tz %}
 <div class="container py-4" style="max-width: 720px">
   <!-- TOP BAR -->
   <div class="d-flex justify-content-between align-items-center mb-4">
@@ -60,7 +60,7 @@
             <p class="mb-1 fw-semibold text-dark">{{ notif.message }}</p>
 
             <small class="text-muted">
-              {{ notif.created_at|timesince }} ago
+              {{ notif.created_at|localtime|timesince }} ago
             </small>
           </div>
 

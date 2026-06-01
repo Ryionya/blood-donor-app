@@ -6,19 +6,42 @@ from django.contrib import messages
 from .forms import RegisterForm, ProfileSetupForm, DonorProfileForm, RecipientProfileForm
 from donors.models import DonorProfile, DonorApplication
 from recipients.models import RecipientProfile
+from donors.utils import send_notification
+from django.utils import timezone
+
+def check_verification_expiry(user):
+    try:
+        profile = user.donor_profile
+        if profile.is_verified and profile.verification_expires_at:
+            if timezone.now() >= profile.verification_expires_at:
+                profile.is_verified = False
+                profile.verified_at = None
+                profile.verification_expires_at = None
+                profile.save()
+                send_notification(
+                    user=user,
+                    notif_type='rejected',
+                    message='Your donor verification has expired (3 months). '
+                            'Please reapply to become a verified donor again.',
+                )
+    except:
+        pass
 
 
 def home_view(request):
     if not request.user.is_authenticated:
         return redirect('login')
-    
+
+    if request.user.role == 'donor':
+        check_verification_expiry(request.user)  # safe — user is authenticated here
+
     if request.user.is_superuser or request.user.role == 'admin':
         return redirect('admin_dashboard')
     elif request.user.role == 'donor':
         return redirect('cooldown_status')
     elif request.user.role == 'recipient':
         return redirect('browse_donors')
-    
+
     return render(request, 'home.html')
 
 
@@ -122,29 +145,12 @@ def profile_setup_view(request):
         if donor_form and donor_form.is_valid():
             donor_instance = donor_form.save(commit=False)
 
-            # ── BLOOD TYPE LOCK ─────────────────────────────────────────────────
-            # is_blood_type_locked stays True even when is_verified=False
-            # during re-verification, so blood type never becomes editable again
-            if donor_profile and donor_profile.is_blood_type_locked:
+
+            if donor_profile and donor_profile.is_verified:
                 donor_instance.blood_type = donor_profile.blood_type
-
-            # ── GOV'T ID: trigger re-check if verified donor uploads a new ID ───
-            if 'donor_government_id' in request.FILES and donor_profile and donor_profile.is_blood_type_locked:
-                donor_instance.government_id = request.FILES['donor_government_id']
-                donor_instance.is_verified = False
-                donor_instance.id_recheck_pending = True
-
-                DonorApplication.objects.create(
-                    donor=request.user,
-                    government_id=request.FILES['donor_government_id'],
-                    status=DonorApplication.STATUS_ID_RECHECK,
-                    is_id_recheck=True,
-                )
-
-                messages.info(request, 'Your new government ID has been submitted for re-verification.')
-
-            elif 'donor_government_id' in request.FILES:
-                # Unverified donor — free upload, no re-check needed
+            
+            # Handle government ID upload
+            if 'donor_government_id' in request.FILES:
                 donor_instance.government_id = request.FILES['donor_government_id']
 
             donor_instance.save()

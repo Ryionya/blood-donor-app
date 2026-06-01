@@ -20,9 +20,27 @@
         <strong>Status:</strong>
 
         {% if app.status == "approved" %}
-        <span class="badge bg-success ms-2 px-3 py-2 rounded-pill"
-          >Approved</span
-        >
+            <span class="badge bg-success ms-2 px-3 py-2 rounded-pill">Approved</span>
+            {% if request.user.donor_profile.verification_expires_at %}
+            <div class="alert alert-info mt-3 py-2 small">
+                <i class="fa-solid fa-clock me-1"></i>
+                Your verification expires on 
+                <strong>{{ request.user.donor_profile.verification_expires_at|date:"M d, Y" }}</strong>.
+                Please reapply before it expires.
+            </div>
+            {% endif %}
+
+        {% elif app.status == "unverified" %}
+            <span class="badge bg-secondary ms-2 px-3 py-2 rounded-pill">Unverified</span>
+            <div class="alert alert-warning mt-3 py-2 small">
+                <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                Your verification has expired. Please reapply to become a verified donor again.
+            </div>
+            <div class="mt-2">
+                <a href="{% url 'apply_donor' %}?reapply=true" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                    ↻ Reapply as Donor
+                </a>
+            </div>
 
         {% elif app.status == "pending" %}
         <span class="badge bg-warning text-dark ms-2 px-3 py-2 rounded-pill"

@@ -14,6 +14,9 @@ from .models import Notification
 from .utils import send_notification
 from recipients.models import BloodRequest
 from accounts.models import User
+from datetime import timedelta
+from django.utils import timezone
+
 
 @login_required
 def apply_donor(request):
@@ -29,8 +32,12 @@ def apply_donor(request):
 
     reapply = request.GET.get("reapply")
 
-    # APPROVED
-    if existing and existing.status == DonorApplication.STATUS_APPROVED:
+    # APPROVED — but only block if still verified
+    if existing and existing.status == DonorApplication.STATUS_APPROVED and profile.is_verified:
+        return redirect('my_application')
+
+    # UNVERIFIED — allow reapply
+    if existing and existing.status == DonorApplication.STATUS_UNVERIFIED and not reapply:
         return redirect('my_application')
 
     # PENDING
@@ -73,14 +80,13 @@ def application_submitted(request):
 @admin_required
 def admin_application_queue(request):
     applications = DonorApplication.objects.filter(
-        status__in=[DonorApplication.STATUS_PENDING, DonorApplication.STATUS_ID_RECHECK]
+        status='pending'
     ).select_related('donor').order_by('-submitted_at')
 
     return render(request, 'admin/application_queue.html', {
         'applications': applications,
         'count': applications.count(),
     })
-
 
 @login_required
 @admin_required
@@ -97,62 +103,26 @@ def admin_review_application(request, pk):
             application.donor.save()
             messages.warning(request, f"{application.donor.username} has been flagged for suspicious behavior.")
 
-        profile = application.donor.donor_profile
-
-        # ── ID RE-CHECK BRANCH ──────────────────────────────────────────────────
-        if application.is_id_recheck:
-            if action == 'approve':
-                application.status = DonorApplication.STATUS_APPROVED
-                application.admin_notes = note
-                application.reviewed_at = timezone.now()
-                application.save()
-
-                profile.is_verified = True
-                profile.id_recheck_pending = False
-                profile.save()
-
-                send_notification(
-                    user=application.donor,
-                    notif_type='id_recheck_approved',
-                    message='Your government ID has been re-verified. You are still a verified donor.'
-                )
-                messages.success(request, f"{application.donor.username}'s ID has been re-verified.")
-
-            elif action == 'reject':
-                if not note:
-                    messages.error(request, 'Please provide a rejection reason.')
-                    return redirect('review_application', pk=pk)
-
-                application.status = DonorApplication.STATUS_REJECTED
-                application.admin_notes = note
-                application.reviewed_at = timezone.now()
-                application.save()
-
-                # Keep is_verified=False and id_recheck_pending=True so donor must resubmit again
-                send_notification(
-                    user=application.donor,
-                    notif_type='id_recheck_rejected',
-                    message=f'Your government ID re-submission was not accepted. Reason: {note}'
-                )
-                messages.warning(request, f"{application.donor.username}'s ID re-check was rejected.")
-
-            return redirect('admin_application_queue')
-
-        # ── FRESH APPLICATION BRANCH ────────────────────────────────────────────
         if action == 'approve':
             application.status = DonorApplication.STATUS_APPROVED
             application.admin_notes = note
             application.reviewed_at = timezone.now()
             application.save()
 
+            profile = application.donor.donor_profile
             profile.is_verified = True
-            profile.is_blood_type_locked = True
+            profile.verified_at = timezone.now()
+            profile.verification_expires_at = timezone.now() + timedelta(days=90)
             profile.save()
+
+            local_expires = timezone.localtime(profile.verification_expires_at)
 
             send_notification(
                 user=application.donor,
                 notif_type='approved',
-                message='Your donor application has been approved! You are now a verified donor.'
+                message=f'Your donor application has been approved! You are now a verified donor. '
+                        f'Your verification is valid for 3 months until '
+                        f'{local_expires.strftime("%B %d, %Y")}.'
             )
             messages.success(request, f"{application.donor.username} has been approved.")
 
@@ -184,14 +154,14 @@ def admin_review_application(request, pk):
 @admin_required
 def admin_dashboard(request):
     recent_pending = DonorApplication.objects.filter(
-        status__in=[DonorApplication.STATUS_PENDING, DonorApplication.STATUS_ID_RECHECK]  # ← include re-checks
+        status=DonorApplication.STATUS_PENDING
     ).order_by("-submitted_at")[:3]
 
     context = {
         "pending_count": DonorApplication.objects.filter(
-            status__in=[DonorApplication.STATUS_PENDING, DonorApplication.STATUS_ID_RECHECK]  # ← include re-checks
+            status=DonorApplication.STATUS_PENDING
         ).count(),
-        "approved_count": DonorApplication.objects.filter(status=DonorApplication.STATUS_APPROVED).count(),
+        "approved_count": DonorProfile.objects.filter(is_verified=True).count(),
         "rejected_count": DonorApplication.objects.filter(status=DonorApplication.STATUS_REJECTED).count(),
         "total_users": User.objects.filter(role__in=['donor', 'recipient']).count(),
         "recent_pending": recent_pending,

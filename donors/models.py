@@ -12,18 +12,23 @@ BLOOD_TYPE_CHOICES = [
 
 class DonorProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='donor_profile')
-    blood_type = models.CharField(max_length=5, choices=BLOOD_TYPE_CHOICES)
+    blood_type = models.CharField(max_length=5, choices=BLOOD_TYPE_CHOICES, blank=True)
     is_verified = models.BooleanField(default=False)
-    is_blood_type_locked = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
     cooldown_until = models.DateTimeField(null=True, blank=True)
     bio = models.TextField(blank=True)
     location = models.CharField(max_length=255, blank=True, null=True)
     government_id = models.FileField(upload_to='donor/ids/', blank=True, null=True)
-    id_recheck_pending = models.BooleanField(default=False)  # ← NEW: flags ID re-submission for admin
+    verified_at = models.DateTimeField(null=True, blank=True)
+    verification_expires_at = models.DateTimeField(null=True, blank=True)
 
     def is_on_cooldown(self):
         if self.cooldown_until and timezone.now() < self.cooldown_until:
+            return True
+        return False
+
+    def is_verification_expired(self):
+        if self.verification_expires_at and timezone.now() >= self.verification_expires_at:
             return True
         return False
 
@@ -35,22 +40,23 @@ class DonorApplication(models.Model):
     STATUS_PENDING = "pending"
     STATUS_APPROVED = "approved"
     STATUS_REJECTED = "rejected"
-    STATUS_ID_RECHECK = "id_recheck"           # ← NEW: distinguishes re-submissions from fresh applications
+    STATUS_UNVERIFIED = "unverified"
 
     STATUS_CHOICES = [
         (STATUS_PENDING, "Pending"),
         (STATUS_APPROVED, "Approved"),
         (STATUS_REJECTED, "Rejected"),
-        (STATUS_ID_RECHECK, "ID Re-check"),    # ← NEW
+        (STATUS_UNVERIFIED, "Unverified"),
     ]
+    
     donor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='applications')
-    medical_certificate = models.FileField(upload_to='applications/certs/', blank=True, null=True)  # ← blank/null: not required for re-checks
-    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')             # ← max_length bump: 'id_recheck' is 10 chars
+    medical_certificate = models.FileField(upload_to='applications/certs/', blank=True, null=True)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
     admin_notes = models.TextField(blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
     government_id = models.FileField(upload_to='applications/ids/', blank=True, null=True)
-    is_id_recheck = models.BooleanField(default=False)  # ← NEW: lets admin queue distinguish re-checks at a glance
+    blood_type = models.CharField(max_length=5, blank=True)
 
     def __str__(self):
         return f"{self.donor.username} — {self.status}"
@@ -71,26 +77,24 @@ class DonationLog(models.Model):
     def __str__(self):
         return f"{self.donor.username} donated on {self.donated_at.date()}"
 
-    
+
 class Notification(models.Model):
     NOTIF_TYPES = [
         ('approved', 'Application Approved'),
         ('rejected', 'Application Rejected'),
-        ('request',  'Donation Request'),
+        ('request', 'Donation Request'),
         ('accepted', 'Request Accepted'),
         ('request_approved', 'Request Approved by Admin'),
         ('request_rejected', 'Request Rejected by Admin'),
-        ('id_recheck_approved', 'ID Re-check Approved'),   # ← NEW
-        ('id_recheck_rejected', 'ID Re-check Rejected'),   # ← NEW
     ]
-    user       = models.ForeignKey(
-                     settings.AUTH_USER_MODEL,
-                     on_delete=models.CASCADE,
-                     related_name='notifications'
-                 )
-    notif_type = models.CharField(max_length=25, choices=NOTIF_TYPES)  # ← max_length bump: 'id_recheck_rejected' is 19 chars
-    message    = models.TextField()
-    is_read    = models.BooleanField(default=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    notif_type = models.CharField(max_length=25, choices=NOTIF_TYPES)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
