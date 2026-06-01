@@ -55,9 +55,11 @@
   {% if user.role == 'donor' and user.active_role == 'donor' %}
 
     <!-- Blood Type -->
-    <div class="col-6 col-md-4">
-      <div class="card border-0 shadow-sm h-100 text-center py-3">
+    <div class="col-4">
+      <div class="card border-0 shadow-sm h-100 text-center py-3"
+           style="border-left: 4px solid #c0392b !important;">
         <div class="card-body">
+          <i class="fa-solid fa-droplet text-danger mb-2" style="font-size:1.4rem;"></i>
           <div class="display-5 fw-bold text-danger">
             {{ donor_profile.blood_type|default:"—" }}
           </div>
@@ -67,20 +69,21 @@
     </div>
 
     <!-- Availability -->
-    <div class="col-6 col-md-4">
-      <div class="card border-0 shadow-sm h-100 text-center py-3">
+    <div class="col-4">
+      <div class="card border-0 shadow-sm h-100 text-center py-3"
+           style="border-left: 4px solid {% if donor_profile.is_on_cooldown %}#f39c12{% elif donor_profile.is_available %}#27ae60{% else %}#95a5a6{% endif %} !important;">
         <div class="card-body">
           {% if donor_profile.is_on_cooldown %}
-            <div class="fs-4">⏳</div>
-            <div class="fw-semibold text-warning mt-1">On Cooldown</div>
+            <i class="fa-solid fa-hourglass-half text-warning mb-2" style="font-size:1.4rem;"></i>
+            <div class="fw-bold text-warning">On Cooldown</div>
             <div class="text-muted small">until {{ donor_profile.cooldown_until|date:"M j" }}</div>
           {% elif donor_profile.is_available %}
-            <div class="fs-4">✅</div>
-            <div class="fw-semibold text-success mt-1">Available</div>
+            <i class="fa-solid fa-circle-check text-success mb-2" style="font-size:1.4rem;"></i>
+            <div class="fw-bold text-success">Available</div>
             <div class="text-muted small">Ready to donate</div>
           {% else %}
-            <div class="fs-4">⏸</div>
-            <div class="fw-semibold text-secondary mt-1">Unavailable</div>
+            <i class="fa-solid fa-circle-pause text-secondary mb-2" style="font-size:1.4rem;"></i>
+            <div class="fw-bold text-secondary">Unavailable</div>
             <div class="text-muted small">Toggled off</div>
           {% endif %}
         </div>
@@ -88,10 +91,12 @@
     </div>
 
     <!-- Donations Logged -->
-    <div class="col-6 col-md-4">
-      <div class="card border-0 shadow-sm h-100 text-center py-3">
+    <div class="col-4">
+      <div class="card border-0 shadow-sm h-100 text-center py-3"
+           style="border-left: 4px solid #185fa5 !important;">
         <div class="card-body">
-          <div class="display-5 fw-bold text-danger">{{ donation_count }}</div>
+          <i class="fa-solid fa-heart-pulse" style="font-size:1.4rem; color:#185fa5;" class="mb-2"></i>
+          <div class="display-5 fw-bold mt-1" style="color:#185fa5;">{{ donation_count }}</div>
           <div class="text-muted small mt-1">Donations Logged</div>
         </div>
       </div>
@@ -99,10 +104,12 @@
 
   {% elif user.role == 'recipient' or user.active_role == 'recipient' %}
 
-    <!-- Blood Type (recipient) -->
-    <div class="col-6 col-md-4">
-      <div class="card border-0 shadow-sm h-100 text-center py-3">
+    <!-- Blood Type -->
+    <div class="col-4">
+      <div class="card border-0 shadow-sm h-100 text-center py-3"
+           style="border-left: 4px solid #185fa5 !important;">
         <div class="card-body">
+          <i class="fa-solid fa-droplet mb-2" style="font-size:1.4rem; color:#185fa5;"></i>
           <div class="display-5 fw-bold" style="color:#185fa5;">
             {{ donor_profile.blood_type|default:"—" }}
           </div>
@@ -112,20 +119,24 @@
     </div>
 
     <!-- Requests Sent -->
-    <div class="col-6 col-md-4">
-      <div class="card border-0 shadow-sm h-100 text-center py-3">
+    <div class="col-4">
+      <div class="card border-0 shadow-sm h-100 text-center py-3"
+           style="border-left: 4px solid #185fa5 !important;">
         <div class="card-body">
-          <div class="display-5 fw-bold" style="color:#185fa5;">{{ total_sent|default:"0" }}</div>
+          <i class="fa-solid fa-paper-plane mb-2" style="font-size:1.4rem; color:#185fa5;"></i>
+          <div class="display-5 fw-bold mt-1" style="color:#185fa5;">{{ total_sent|default:"0" }}</div>
           <div class="text-muted small mt-1">Requests Sent</div>
         </div>
       </div>
     </div>
 
-    <!-- Accepted Requests -->
-    <div class="col-6 col-md-4">
-      <div class="card border-0 shadow-sm h-100 text-center py-3">
+    <!-- Accepted -->
+    <div class="col-4">
+      <div class="card border-0 shadow-sm h-100 text-center py-3"
+           style="border-left: 4px solid #27ae60 !important;">
         <div class="card-body">
-          <div class="display-5 fw-bold text-success">{{ accepted_count|default:"0" }}</div>
+          <i class="fa-solid fa-handshake text-success mb-2" style="font-size:1.4rem;"></i>
+          <div class="display-5 fw-bold text-success mt-1">{{ accepted_count|default:"0" }}</div>
           <div class="text-muted small mt-1">Accepted</div>
         </div>
       </div>
@@ -141,47 +152,43 @@
 
   {% if user.role == 'donor' and user.active_role == 'donor' %}
 
-    <!-- Incoming Requests -->
     <div class="col-6 col-md-3">
       <a href="{% url 'incoming_requests' %}" class="text-decoration-none">
-        <div class="card border-0 shadow-sm h-100 text-center py-4 px-2 position-relative">
+        <div class="card border-0 shadow-sm h-100 text-center py-4 px-2 position-relative action-card">
           {% if pending_incoming %}
             <span class="position-absolute top-0 end-0 m-2 badge rounded-pill bg-danger">
               {{ pending_incoming }}
             </span>
           {% endif %}
-          <div class="fs-2 mb-2">📥</div>
+          <i class="fa-solid fa-inbox text-danger mb-2" style="font-size:1.8rem;"></i>
           <div class="fw-semibold small">Incoming Requests</div>
         </div>
       </a>
     </div>
 
-    <!-- Log a Donation -->
     <div class="col-6 col-md-3">
       <a href="{% url 'log_donation' %}" class="text-decoration-none">
-        <div class="card border-0 shadow-sm h-100 text-center py-4 px-2">
-          <div class="fs-2 mb-2">🩸</div>
+        <div class="card border-0 shadow-sm h-100 text-center py-4 px-2 action-card">
+          <i class="fa-solid fa-droplet text-danger mb-2" style="font-size:1.8rem;"></i>
           <div class="fw-semibold small">Log a Donation</div>
         </div>
       </a>
     </div>
 
-    <!-- Cooldown Tracker -->
     <div class="col-6 col-md-3">
       <a href="{% url 'cooldown_status' %}" class="text-decoration-none">
-        <div class="card border-0 shadow-sm h-100 text-center py-4 px-2">
-          <div class="fs-2 mb-2">⏳</div>
+        <div class="card border-0 shadow-sm h-100 text-center py-4 px-2 action-card">
+          <i class="fa-solid fa-hourglass-half text-danger mb-2" style="font-size:1.8rem;"></i>
           <div class="fw-semibold small">Cooldown Tracker</div>
         </div>
       </a>
     </div>
 
-    <!-- My Application / Apply -->
     {% if donor_profile.is_verified %}
       <div class="col-6 col-md-3">
         <a href="{% url 'my_application' %}" class="text-decoration-none">
-          <div class="card border-0 shadow-sm h-100 text-center py-4 px-2">
-            <div class="fs-2 mb-2">📋</div>
+          <div class="card border-0 shadow-sm h-100 text-center py-4 px-2 action-card">
+            <i class="fa-solid fa-file-medical text-danger mb-2" style="font-size:1.8rem;"></i>
             <div class="fw-semibold small">My Application</div>
           </div>
         </a>
@@ -189,8 +196,9 @@
     {% else %}
       <div class="col-6 col-md-3">
         <a href="{% url 'apply_donor' %}" class="text-decoration-none">
-          <div class="card border-0 shadow-sm h-100 text-center py-4 px-2" style="border: 2px dashed #c0392b !important;">
-            <div class="fs-2 mb-2">📝</div>
+          <div class="card border-0 shadow-sm h-100 text-center py-4 px-2 action-card"
+               style="border: 2px dashed #c0392b !important;">
+            <i class="fa-solid fa-file-circle-plus text-danger mb-2" style="font-size:1.8rem;"></i>
             <div class="fw-semibold small text-danger">Apply as Donor</div>
             <div class="text-muted" style="font-size:11px;">Get verified</div>
           </div>
@@ -200,21 +208,19 @@
 
   {% elif user.role == 'recipient' or user.active_role == 'recipient' %}
 
-    <!-- Browse Donors -->
-    <div class="col-6 col-md-4">
+    <div class="col-6">
       <a href="{% url 'browse_donors' %}" class="text-decoration-none">
-        <div class="card border-0 shadow-sm h-100 text-center py-4 px-2">
-          <div class="fs-2 mb-2">🔍</div>
+        <div class="card border-0 shadow-sm h-100 text-center py-4 px-2 action-card">
+          <i class="fa-solid fa-magnifying-glass text-danger mb-2" style="font-size:1.8rem;"></i>
           <div class="fw-semibold small">Browse Donors</div>
         </div>
       </a>
     </div>
 
-    <!-- My Requests -->
-    <div class="col-6 col-md-4">
+    <div class="col-6">
       <a href="{% url 'my_requests' %}" class="text-decoration-none">
-        <div class="card border-0 shadow-sm h-100 text-center py-4 px-2">
-          <div class="fs-2 mb-2">📋</div>
+        <div class="card border-0 shadow-sm h-100 text-center py-4 px-2 action-card">
+          <i class="fa-solid fa-clipboard-list text-danger mb-2" style="font-size:1.8rem;"></i>
           <div class="fw-semibold small">My Requests</div>
         </div>
       </a>
@@ -225,4 +231,17 @@
 </div>
 {% endif %}
 
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .action-card {
+    transition: background-color 0.15s ease, transform 0.15s ease;
+    cursor: pointer;
+  }
+  .action-card:hover {
+    background-color: #fff5f5 !important;
+    transform: translateY(-2px);
+  }
+</style>
 {% endblock %}

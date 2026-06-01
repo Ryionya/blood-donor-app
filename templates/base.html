@@ -66,17 +66,6 @@
 
                 {% if user.is_authenticated %}
 
-                  <!-- Global Voice Control -->
-                  {% if user.is_authenticated %}
-                  <li class="nav-item me-1">
-                      <button id="global-voice-btn"
-                              class="btn btn-outline-light btn-sm position-relative"
-                              title="Voice Command (Filipino/English)">
-                          <span id="global-voice-icon">🎤</span>
-                      </button>
-                  </li>
-                  {% endif %}
-
                   <!-- Notifications -->
                   {% if user.role == 'donor' or user.role == 'recipient' %}
                     <li class="nav-item">
@@ -265,6 +254,23 @@
         {% block extra_js %}{% endblock %}
 
     {% if user.is_authenticated %}
+
+    <!-- ── Floating Mic Button ── -->
+    <div id="voice-fab-wrapper"
+         style="position:fixed; bottom:24px; right:24px; z-index:10000; display:flex; flex-direction:row; align-items:flex-end; gap:10px;">
+
+      <!-- Mic button -->
+      <button id="global-voice-btn"
+              title="Voice Command (Filipino/English)"
+              style="width:56px; height:56px; border-radius:50%; border:none;
+                     background:#c0392b; color:#fff; font-size:1.3rem;
+                     box-shadow:0 4px 16px rgba(192,57,43,0.4);
+                     display:flex; align-items:center; justify-content:center;
+                     cursor:pointer; transition: transform 0.15s, box-shadow 0.15s;">
+        <i class="fa-solid fa-microphone" id="global-voice-icon"></i>
+      </button>
+    </div>
+
     <!-- Modern Install Card -->
     <div id="installCard"
         class="d-none position-fixed bottom-0 end-0 m-3"
@@ -346,21 +352,12 @@
     </script>
     {% endif %}
 
-    <style>
-    @keyframes pulse-ring {
-        0%   { transform: scale(1);   opacity: 0.8; }
-        100% { transform: scale(1.8); opacity: 0;   }
-    }
-    .voice-listening {
-        animation: pulse-ring 1s ease-out infinite;
-        box-shadow: 0 0 0 4px rgba(255,255,255,0.4);
-    }
-    </style>
-
     <script>
     (function() {
-        const btn  = document.getElementById('global-voice-btn');
-        const icon = document.getElementById('global-voice-icon');
+        const btn       = document.getElementById('global-voice-btn');
+        const icon      = document.getElementById('global-voice-icon');
+        const bubble    = document.getElementById('voice-transcript-bubble');
+        const bubbleTxt = document.getElementById('voice-transcript-text');
 
         if (!btn) return;
 
@@ -397,7 +394,7 @@
             const toast = document.createElement('div');
             toast.id = 'voice-toast';
             toast.className = `alert alert-${type} position-fixed shadow`;
-            toast.style.cssText = 'bottom:24px;right:24px;z-index:9999;min-width:280px;max-width:380px;';
+            toast.style.cssText = 'bottom:24px;right:92px;z-index:9999;min-width:200px;max-width:calc(100vw - 110px);margin-bottom:0;position:fixed;';
             toast.innerHTML = msg;
             document.body.appendChild(toast);
             setTimeout(() => { if (toast.parentNode) toast.remove(); }, 4000);
@@ -405,37 +402,55 @@
 
         function setListening(on) {
             isListening = on;
-            icon.textContent = on ? '🔴' : '🎤';
-            btn.classList.toggle('voice-listening', on);
-            btn.classList.toggle('btn-danger', on);
-            btn.classList.toggle('btn-outline-light', !on);
+            if (on) {
+                icon.className = 'fa-solid fa-microphone';
+                btn.style.background = '#f39c12';
+                btn.style.boxShadow = '0 4px 16px rgba(243,156,18,0.5)';
+                btn.style.transform = 'scale(1)';
+                btn.title = 'Click to stop listening';
+            } else {
+                icon.className = 'fa-solid fa-microphone';
+                btn.style.background = '#c0392b';
+                btn.style.boxShadow = '0 4px 16px rgba(192,57,43,0.4)';
+                btn.style.transform = 'scale(1)';
+                btn.title = 'Voice Command (Filipino/English)';
+            }
         }
 
         btn.addEventListener('click', () => {
-            window.speechSynthesis.cancel();
             if (isListening) {
-                recognition.stop();
+                window.speechSynthesis.cancel();
+                recognition.abort();
+                setListening(false);
+                showToast('🎙️ Stopped listening.', 'secondary');
                 return;
             }
-            
+
+            // Beep sound on start
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.15);
+            } catch(e) {}
+
             setListening(true);
             showToast('🎙️ Listening… speak in Filipino or English', 'info');
-            
-            // Start mic ONLY after speech finishes
-            const utterance = new SpeechSynthesisUtterance('Listening. Please speak your command.');
-            utterance.lang  = 'en-US';
-            utterance.rate  = 1.0;
-            utterance.pitch = 1.0;
-            utterance.onend = function() {
-                // Speech finished — now start the mic
-                try { recognition.start(); } catch(e) { setListening(false); }
-            };
-            window.speechSynthesis.speak(utterance);
+
+            try { recognition.start(); } catch(e) { setListening(false); }
         });
 
         recognition.onresult = async function(event) {
             const transcript = event.results[0][0].transcript.trim();
             console.log('Transcript:', transcript);
+            if (bubble && bubbleTxt) { bubbleTxt.textContent = '🎙️ ' + transcript; }
             setListening(false);
             showToast(`🎙️ Heard: "<strong>${transcript}</strong>"`, 'info');
 
@@ -577,19 +592,14 @@
 
         recognition.onerror = function(event) {
             setListening(false);
+            if (event.error === 'aborted') return;
             const msgs = {
                 'no-speech':     '🎙️ No speech detected — try again.',
                 'not-allowed':   '🎙️ Microphone permission denied.',
                 'network':       '🎙️ Network error during voice recognition.',
                 'audio-capture': '🎙️ Microphone not found.',
             };
-            const errorTexts = {
-                'no-speech':   'No speech detected. Please try again.',
-                'not-allowed': 'Microphone permission denied.',
-                'network':     'Network error during voice recognition.',
-            };
             showToast(msgs[event.error] || `⚠️ Error: ${event.error}`, 'warning');
-            speak(errorTexts[event.error] || 'An error occurred. Please try again.', 'en-US');
         };
 
         recognition.onend = function() {
