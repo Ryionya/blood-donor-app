@@ -27,6 +27,8 @@
 <a href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'incoming_requests' %}" class="notification-card text-decoration-none">
 {% elif notif.notif_type == 'accepted' or notif.notif_type == 'rejected' or notif.notif_type == 'declined' or notif.notif_type == 'request_approved' or notif.notif_type == 'request_rejected' %}
 <a href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'my_requests' %}" class="notification-card text-decoration-none">
+{% elif notif.notif_type == 'log_verified' or notif.notif_type == 'log_rejected' %}
+<a href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'cooldown_status' %}" class="notification-card text-decoration-none">
 {% else %}
 <a href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'my_application' %}" class="notification-card text-decoration-none">
 {% endif %}
@@ -53,6 +55,16 @@
 {% elif notif.notif_type == 'request' %}
 <div class="notif-icon bg-warning-subtle text-warning">
   <i class="fa-solid fa-droplet"></i>
+</div>
+
+{% elif notif.notif_type == 'log_verified' %}
+<div class="notif-icon bg-success-subtle text-success">
+    <i class="fa-solid fa-syringe"></i>
+</div>
+
+{% elif notif.notif_type == 'log_rejected' %}
+<div class="notif-icon bg-danger-subtle text-danger">
+    <i class="fa-solid fa-syringe"></i>
 </div>
 
 {% else %}

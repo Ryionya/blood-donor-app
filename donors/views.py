@@ -481,7 +481,8 @@ def admin_user_profile(request, pk):
 @admin_required
 def admin_donation_log_queue(request):
     logs = DonationLog.objects.filter(
-        is_verified=False
+        is_verified=False,
+        is_rejected=False
     ).select_related('donor').order_by('-donated_at')
 
     return render(request, 'admin/donation_log_queue.html', {
@@ -513,9 +514,10 @@ def admin_review_donation_log(request, pk):
 
             send_notification(
                 user=log.donor,
-                notif_type='approved',
-                message=f'Your donation log has been verified by the admin. '
-                        f'Your 56-day cooldown is now active.'
+                notif_type='log_verified',
+                message=f'Your donation log has been verified! '
+                        f'Your 56-day cooldown is now active until '
+                        f'{profile.cooldown_until.strftime("%B %d, %Y")}.'
             )
             messages.success(request, f"{log.donor.username}'s donation log has been verified.")
 
@@ -538,7 +540,7 @@ def admin_review_donation_log(request, pk):
 
             send_notification(
                 user=log.donor,
-                notif_type='rejected',
+                notif_type='log_rejected',
                 message=f'Your donation log was not verified. Reason: {note}. '
                         f'Your availability has been restored.'
             )
