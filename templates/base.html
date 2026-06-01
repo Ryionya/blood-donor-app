@@ -9,6 +9,9 @@
 
         <title>{% block title %}BloodLink{% endblock %}</title>
 
+        <!-- Google Fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
         <!-- Bootstrap 5 -->
         <link
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
@@ -29,6 +32,9 @@
 
 
         <style>
+          * {
+            font-family: 'Poppins', sans-serif;
+          }
           /* Pulse animation for the mic button while listening */
           @keyframes mic-pulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.5); }
@@ -44,25 +50,19 @@
 
       <body>
         <!-- ── Navbar ──────────────────────────────────────────────── -->
-        <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
-          <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'home' %}">🩸 BloodLink</a>
+        <nav class="navbar navbar-expand-lg"
+             style="background:white; margin:12px auto; max-width:1320px; width:calc(100% - 24px);
+                    border-radius:50px; box-shadow:0 2px 16px rgba(0,0,0,0.10);
+                    padding:6px 24px; position:sticky; top:12px; z-index:1000;">
+          <div class="container-fluid px-0">
+            <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/">
+              <img src="/static/images/logo.png"
+                   alt="BloodLink"
+                   style="height:32px; width:auto; object-fit:contain; display:block; margin:0 auto;">
+            </a>
 
-            <!-- Collapsible toggler (from new commit) -->
-            <button
-              class="navbar-toggler"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#navbarNav"
-              aria-controls="navbarNav"
-              aria-expanded="false"
-              aria-label="Toggle navigation"
-            >
-              <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarNav">
-              <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+            <div id="navbarNav">
+              <ul class="navbar-nav ms-auto align-items-center gap-1 flex-row">
 
                 {% if user.is_authenticated %}
 
@@ -71,15 +71,16 @@
                     <li class="nav-item">
                       <div class="dropdown me-2">
                         <button
-                          class="btn btn-link position-relative p-2 text-white"
+                          class="btn btn-link position-relative p-2"
                           id="notifDropdown"
                           data-bs-toggle="dropdown"
                           aria-expanded="false"
+                          style="color:#c0392b;"
                         >
                           <i class="fa-solid fa-bell" style="font-size: 20px"></i>
                           {% if unread_count %}
                             <span
-                              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-light text-danger"
+                              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white"
                               style="font-size: 10px"
                             >
                               {{ unread_count }}
@@ -143,19 +144,28 @@
                     </li>
                   {% endif %}
 
-                  <!-- Username + Logout dropdown -->
+                  <!-- Profile Dropdown -->
                   <li class="nav-item dropdown">
-                      <a class="nav-link dropdown-toggle text-white"
+                      <a class="nav-link p-0 ms-1"
                         href="#"
                         data-bs-toggle="dropdown"
                         aria-expanded="false">
-                          👤 {{ user.username }}
-                                  {% if user.role == 'donor' and user.donor_profile.is_verified %}
-                                    <span title="Verified Donor" style="color:#185fa5; font-size:14px;">
-                                      <i class="fa-solid fa-circle-check"></i>
-                                    </span>
-                                  {% endif %}
+                          {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}"
+                                 alt="{{ user.username }}"
+                                 style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #e0e0e0;">
+                          {% else %}
+                            <div style="width:36px; height:36px; border-radius:50%; background:#c0392b; border:2px solid #e0e0e0; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold; font-size:14px;">
+                              {{ user.username|first|upper }}
+                            </div>
+                          {% endif %}
+                          {% if user.role == 'donor' and user.donor_profile.is_verified %}
+                            <span style="position:absolute; bottom:0; right:0; color:#185fa5; font-size:13px; background:white; border-radius:50%; width:15px; height:15px; display:flex; align-items:center; justify-content:center; line-height:1;">
+                              <i class="fa-solid fa-circle-check"></i>
+                            </span>
+                          {% endif %}
                       </a>
+
                       <ul class="dropdown-menu dropdown-menu-end">
                           <li>
                               <a class="dropdown-item" href="{% url 'profile_setup' %}">
@@ -194,10 +204,10 @@
 
                 {% else %}
                   <li class="nav-item">
-                    <a href="/login/" class="btn btn-outline-light btn-sm me-2">Login</a>
+                    <a href="/login/" class="btn btn-outline-danger btn-sm me-2">Login</a>
                   </li>
                   <li class="nav-item">
-                    <a href="/register/" class="btn btn-light btn-sm text-danger fw-bold">Register</a>
+                    <a href="/register/" class="btn btn-danger btn-sm fw-bold">Register</a>
                   </li>
                 {% endif %}
 
