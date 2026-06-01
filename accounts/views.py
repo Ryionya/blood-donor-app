@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import RegisterForm, ProfileSetupForm, DonorProfileForm, RecipientProfileForm
 from donors.models import DonorProfile, DonorApplication
-from recipients.models import RecipientProfile
+from recipients.models import RecipientProfile, BloodRequest
 from donors.utils import send_notification
 from django.utils import timezone
 
@@ -33,16 +33,37 @@ def home_view(request):
         return redirect('login')
 
     if request.user.role == 'donor':
-        check_verification_expiry(request.user)  # safe — user is authenticated here
+        check_verification_expiry(request.user)
 
     if request.user.is_superuser or request.user.role == 'admin':
         return redirect('admin_dashboard')
-    elif request.user.role == 'donor':
-        return redirect('cooldown_status')
-    elif request.user.role == 'recipient':
-        return redirect('browse_donors')
 
-    return render(request, 'home.html')
+    user = request.user
+    context = {}
+
+    if user.role == 'donor':
+        donor_profile = getattr(user, 'donor_profile', None)
+        latest_application = user.applications.order_by('-submitted_at').first()
+        donation_count = user.donation_logs.count()
+        pending_incoming = user.received_requests.filter(status='pending').count()
+        context = {
+            'donor_profile': donor_profile,
+            'latest_application': latest_application,
+            'donation_count': donation_count,
+            'pending_incoming': pending_incoming,
+        }
+
+    elif user.role == 'recipient':
+        recipient_profile = getattr(user, 'recipient_profile', None)
+        total_sent = user.sent_requests.count()
+        accepted_count = user.sent_requests.filter(status='accepted').count()
+        context = {
+            'recipient_profile': recipient_profile,
+            'total_sent': total_sent,
+            'accepted_count': accepted_count,
+        }
+
+    return render(request, 'home.html', context)
 
 
 def register_view(request):
@@ -218,12 +239,12 @@ def switch_role_view(request):
         user.active_role = 'recipient'
         user.save()
         messages.info(request, 'You are now browsing as a Recipient.')
-        return redirect('browse_donors')
+        return redirect('home')
     else:
         user.active_role = 'donor'
         user.save()
         messages.info(request, 'You are now back in Donor mode.')
-        return redirect('cooldown_status')
+        return redirect('home')
 
 @login_required
 def faq_view(request):
