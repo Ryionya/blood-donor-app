@@ -514,7 +514,7 @@ def admin_review_donation_log(request, pk):
             
             # NOW set the cooldown after admin verification
             profile = log.donor.donor_profile
-            profile.cooldown_until = log.donated_at + timedelta(days=56)
+            profile.cooldown_until = timezone.localtime() + timedelta(days=56)
             profile.is_available = False
             profile.save()
 
