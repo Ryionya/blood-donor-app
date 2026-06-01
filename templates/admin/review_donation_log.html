@@ -60,7 +60,7 @@
         <h5>Proof of Donation</h5>
         <div class="mt-2">
             {% if log.proof_document %}
-                {% with name=log.proof_document.name %}
+                {% with name=log.proof_document.name url=log.proof_document.url %}
                     <a href="{{ log.proof_document.url }}" target="_blank" style="text-decoration:none;">
                         {% if 'certs/' in url or 'ids/' in url %}
                             <div class="border rounded p-3 text-center bg-light"

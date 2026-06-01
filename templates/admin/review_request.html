@@ -33,7 +33,7 @@
            <!-- Recipient Government ID -->
             <p class="fw-semibold mb-1">Government ID</p>
             {% if blood_request.recipient_government_id %}
-                {% with name=blood_request.recipient_government_id.name %}
+                {% with name=blood_request.recipient_government_id.name url=blood_request.recipient_government_id.url %}
                     <a href="{{ blood_request.recipient_government_id.url }}" target="_blank" style="text-decoration:none;">
                         {% if 'certs/' in url or 'ids/' in url %}
                             <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
@@ -74,7 +74,7 @@
             <!-- Donor Government ID -->
             <p class="fw-semibold mb-1">Government ID</p>
             {% if blood_request.donor_government_id %}
-                {% with name=blood_request.donor_government_id.name %}
+                {% with name=blood_request.donor_government_id.name url=blood_request.donor_government_id.url %}
                     <a href="{{ blood_request.donor_government_id.url }}" target="_blank" style="text-decoration:none;">
                         {% if 'certs/' in url or 'ids/' in url %}
                             <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
@@ -118,7 +118,7 @@
             <!-- Medical Certificate -->
             <p class="fw-semibold mb-1">Medical Certificate</p>
             {% if blood_request.medical_certificate %}
-                {% with name=blood_request.medical_certificate.name %}
+                {% with name=blood_request.medical_certificate.name url=blood_request.medical_certificate.url %}
                     <a href="{{ blood_request.medical_certificate.url }}" target="_blank" style="text-decoration:none;">
                         {% if 'certs/' in url or 'ids/' in url %}
                             <div class="border rounded p-3 text-center bg-light" style="height:200px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
