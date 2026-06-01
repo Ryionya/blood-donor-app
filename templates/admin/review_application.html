@@ -84,7 +84,7 @@
       <div class="col-md-6">
         <p class="fw-bold mb-1">Government ID</p>
         {% if application.government_id %}
-          {% with name=application.government_id.name %}
+          {% with name=application.government_id.name url=application.government_id.url %}
             <a href="{{ application.government_id.url }}" target="_blank" style="text-decoration:none;">
               {% if 'certs/' in url or 'ids/' in url %}
                 <div class="border rounded p-3 text-center bg-light" style="height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
@@ -107,7 +107,7 @@
       <div class="col-md-6">
         <p class="fw-bold mb-1">Medical Certificate</p>
         {% if application.medical_certificate %}
-          {% with name=application.medical_certificate.name %}
+          {% with name=application.government_id.name url=application.government_id.url %}
             <a href="{{ application.medical_certificate.url }}" target="_blank" style="text-decoration:none;">
               {% if 'certs/' in url or 'ids/' in url %}
                 <div class="border rounded p-3 text-center bg-light" style="height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
