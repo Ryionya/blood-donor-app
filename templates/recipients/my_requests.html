@@ -92,6 +92,9 @@
               <p class="mb-0 text-muted">📍 {{ req.donor.location|default:"Not provided" }}</p>
               <p class="mb-0 text-muted">Coordinate directly with the donor.</p>
             </div>
+            <a href="{% url 'chat' req.pk %}" class="btn btn-danger btn-sm w-100 mt-2">
+                💬 Open Chat
+            </a>
 
           {% elif req.status == 'declined' %}
             <span class="badge bg-secondary fs-6">❌ Declined</span>
