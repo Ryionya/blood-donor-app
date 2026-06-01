@@ -34,7 +34,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.railway.app']
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://appdev-bloodlink-ph.up.railway.app/',
+    'https://appdev-bloodlink-ph.up.railway.app',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
