@@ -1,5 +1,6 @@
 import os
 from groq import Groq
+import re
 
 client = Groq(api_key=os.getenv('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'))
 def get_client():
@@ -13,30 +14,34 @@ def get_client():
 # All navigable pages with their URL names and descriptions
 NAVIGATION_PAGES = {
     # Accounts (Donors & Recipients)
-    'browse_donors':            'Browse or find blood donors, search donors',
-    'my_requests':              'My blood requests, requests I sent, sent requests',
-    'incoming_requests':        'Incoming donation requests, requests received, incoming',
-    'cooldown_status':          'Cooldown tracker, donation tracker, my donations, cooldown',
-    'log_donation':             'Log a completed donation, I donated, log donation',
-    'my_application':           'My donor application, application status, my application',
-    'apply_donor':              'Apply as a donor, donor application form, apply',
-    'profile_setup':            'My profile, edit profile, update profile, profile settings',
-    'change_password':          'Change password, update password, new password, edit password',
-    'faq':                      'FAQ, how it works, frequently asked questions, FAQ & How it works',
-    'notifications_page':       'Notifications, my notifications, alerts',
-    'switch_role':              'Switch role, switch to recipient, switch to donor, change role',
-    'send_request':             'Send donation request, request blood, ask for donation, send request to donor',
-    'download_card':            'Download donor card, print donor card, save donor card, download card',
-    'logout':                   'Logout, log out, sign out',
+    'browse_donors':            'Browse Donors, I want to find a donor, show me available donors, looking for blood, find someone who can donate, create a new request, maghanap ng donor, hanapin ang donor',
+    'my_requests':              'My Requests, show me the requests I sent, what requests did I make, aking mga request, mga request na sinend ko',
+    'incoming_requests':        'Incoming Requests, someone requested from me, who wants my blood, may nag-request sa akin, mga natanggap na request',
+    'cooldown_status':          'Cooldown Status, can I donate again, when can I donate next, how long is my cooldown, cooldown ko, kailan ako makakapag-donate ulit',
+    'log_donation':             'Log a Donation, I just donated, I already gave blood, record my donation, nag-donate na ako, I donated today',
+    'my_application':           'My Application, what is my application status, did my application get approved, status ng application ko',
+    'apply_donor':              'Apply as Donor, I want to become a donor, how do I apply, mag-apply bilang donor, gusto kong mag-donate',
+    'profile_setup':            'Edit Profile, My Profile, update my info, change my details, i-edit ang profile ko, baguhin ang profile',
+    'change_password':          'Change Password, I want to change my password, update my password, palitan ang password ko',
+    'faq':                      'FAQ, How it Works, how does this work, I have questions, paano gumagana ito, mga tanong',
+    'notifications_page':       'Notifications, show my notifications, any new alerts, mga notipikasyon ko, may bago bang notipikasyon',
+    'switch_role':              'Switch Role, I want to be a donor instead, change to recipient, palitan ang role ko, maging donor, maging recipient',
+    'send_request':             'Send Request, I want to ask this donor for blood, request blood from this person, mag-request ng dugo, humingi ng donation',
+    'download_card':            'Download Card, Donor Card, I want my donor card, print my donor card, i-download ang donor card ko, i-print ang card',
+    'logout':                   'Logout, Log Out, I want to sign out, mag-logout, lumabas',
+
+    # Home
+    'home':                     'Home, go home, take me to the main page, back to home, pumunta sa home',
 
     # Admin
-    'admin_dashboard':          'Admin dashboard, admin panel, dashboard',
-    'admin_application_queue':  'Review queue, pending applications, application queue',
-    'admin_manage_users':       'Manage users, all accounts, user management',
-    'admin_donor_list':         'Donor list, verified donors, all donors',
-    'admin_stats':              'Stats, statistics, requests and donations, reports',
-    'admin_request_queue':      'Request queue, pending requests, blood request queue',
-    'admin_user_list':          'User list, all users, manage accounts',
+    'admin_dashboard':          'Admin Dashboard, go to the dashboard, open admin panel, show me the overview',
+    'admin_application_queue':  'Application Queue, show pending applications, who applied, review donor applications, mga aplikasyong naghihintay',
+    'admin_manage_users':       'Manage Users, show all accounts, I want to manage users',
+    'admin_donor_list':         'Donor List, show all verified donors, who are the donors, lahat ng donor',
+    'admin_stats':              'Stats, Statistics, show me the stats, reports, how many donations, mga istatistika',
+    'admin_request_queue':      'Request Queue, show pending blood requests, mga kahilingang naghihintay',
+    'admin_user_list':          'User List, show all users, full user list, lahat ng users',
+    'admin_donation_log_queue': 'Donation Logs, show donation logs, review donation records, pending donation logs',
 }
 
 
@@ -186,6 +191,23 @@ Do not include donor names — just describe the best match characteristics."""
     except Exception:
         return None
 
+def fix_year_mishear(transcript: str) -> str:
+    """
+    Fix common speech recognition mishearing of years.
+    "2016" → "2026", "2015" → "2025", etc.
+    """
+    current_year = __import__('datetime').date.today().year
+
+    def replace_year(match):
+        year = int(match.group())
+        if year < current_year:
+            corrected = year + 10
+            if abs(corrected - current_year) <= 2:
+                return str(corrected)
+        return str(year)
+
+    return re.sub(r'\b20\d{2}\b', replace_year, transcript)
+
 def parse_form_field_answer(transcript, field_type):
     """
     Use Groq to extract a specific field value from the user's speech.
@@ -194,6 +216,9 @@ def parse_form_field_answer(transcript, field_type):
     client = get_client()
     if not client:
         return {'value': transcript}  # fallback to raw transcript
+    
+    if field_type == 'date':
+        transcript = fix_year_mishear(transcript)
 
     prompts = {
         'hospital_name': f"""Extract the hospital or clinic name from this speech: "{transcript}"
@@ -214,9 +239,15 @@ Return ONLY a JSON object: {{"value": 1}}
 Use integer only. If no number found, return: {{"value": 1}}
 Do not include any other text.""",
 
-        'message': f"""Clean up this speech into a proper message for a blood donation request: "{transcript}"
-Return ONLY a JSON object: {{"value": "cleaned message here"}}
-Keep it natural and compassionate. Do not include any other text.""",
+        'message': f"""Fix grammar and spelling of this blood donation request message: "{transcript}"
+Rules:
+- Keep it as close to the original as possible
+- Only fix grammar, spelling, and punctuation
+- Do NOT make it longer than the original
+- Keep the same tone — if casual, keep it casual
+- If Filipino or Taglish, keep it Filipino or Taglish
+- Return ONLY a JSON object: {{"value": "corrected message here"}}
+- Do not include any other text.""",
     }
 
     try:
