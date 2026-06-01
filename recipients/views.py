@@ -18,6 +18,7 @@ from django.conf import settings
 import os
 
 from django.db import models
+from .models import BloodRequest, ChatMessage
 
 
 
@@ -518,3 +519,142 @@ def ph_cities_view(request):
         return JsonResponse(data)
     except Exception:
         return JsonResponse({'cities': []})
+
+@login_required
+def chat_view(request, request_id):
+    blood_request = get_object_or_404(
+        BloodRequest,
+        pk=request_id,
+        status='accepted'
+    )
+
+    # Only allow recipient and donor to access chat
+    if request.user != blood_request.recipient and request.user != blood_request.donor:
+        messages.error(request, 'You are not allowed to access this chat.')
+        return redirect('home')
+
+    # Mark messages as read
+    ChatMessage.objects.filter(
+        blood_request=blood_request,
+    ).exclude(sender=request.user).update(is_read=True)
+
+    chat_messages = ChatMessage.objects.filter(blood_request=blood_request)
+    
+    # Determine if chat is read only
+    # Chat becomes read only when donation is logged
+    is_read_only = DonorProfile.objects.filter(
+        user=blood_request.donor,
+        cooldown_until__isnull=False
+    ).exists()
+
+    return render(request, 'recipients/chat.html', {
+        'blood_request': blood_request,
+        'chat_messages': chat_messages,
+        'other_user': blood_request.donor if request.user == blood_request.recipient else blood_request.recipient,
+        'is_read_only': is_read_only,
+    })
+
+
+@login_required
+def send_message_view(request, request_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    blood_request = get_object_or_404(
+        BloodRequest,
+        pk=request_id,
+        status='accepted'
+    )
+
+    # Only allow recipient and donor
+    if request.user != blood_request.recipient and request.user != blood_request.donor:
+        return JsonResponse({'error': 'Not allowed'}, status=403)
+
+    # Check if read only
+    is_read_only = DonorProfile.objects.filter(
+        user=blood_request.donor,
+        cooldown_until__isnull=False
+    ).exists()
+
+    if is_read_only:
+        return JsonResponse({'error': 'Chat is now read only'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        message_text = data.get('message', '').strip()
+
+        if not message_text:
+            return JsonResponse({'error': 'Empty message'}, status=400)
+
+        if len(message_text) > 1000:
+            return JsonResponse({'error': 'Message too long'}, status=400)
+
+        msg = ChatMessage.objects.create(
+            blood_request=blood_request,
+            sender=request.user,
+            message=message_text
+        )
+
+        # Send push notification to other user
+        other_user = blood_request.donor if request.user == blood_request.recipient else blood_request.recipient
+        try:
+            payload = {
+                'head': f'💬 New message from {request.user.username}',
+                'body': message_text[:100],
+                'icon': '/static/images/icon-192.png',
+                'url': f'/recipients/chat/{request_id}/',
+            }
+            send_user_notification(user=other_user, payload=payload, ttl=1000)
+        except Exception:
+            pass
+
+        # Create in-app notification
+        Notification.objects.create(
+            user=other_user,
+            notif_type='request',
+            message=f'💬 {request.user.username}: {message_text[:50]}',
+        )
+
+        return JsonResponse({
+            'id': msg.pk,
+            'sender': request.user.username,
+            'message': msg.message,
+            'created_at': msg.created_at.strftime('%b %d, %Y %I:%M %p'),
+            'is_mine': True,
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def get_messages_view(request, request_id):
+    blood_request = get_object_or_404(
+        BloodRequest,
+        pk=request_id,
+        status='accepted'
+    )
+
+    if request.user != blood_request.recipient and request.user != blood_request.donor:
+        return JsonResponse({'error': 'Not allowed'}, status=403)
+
+    # Get messages after a certain ID (for polling)
+    after_id = request.GET.get('after', 0)
+    
+    new_messages = ChatMessage.objects.filter(
+        blood_request=blood_request,
+        pk__gt=after_id
+    )
+
+    # Mark as read
+    new_messages.exclude(sender=request.user).update(is_read=True)
+
+    messages_data = [{
+        'id': msg.pk,
+        'sender': msg.sender.username,
+        'message': msg.message,
+        'created_at': msg.created_at.strftime('%b %d, %Y %I:%M %p'),
+        'is_mine': msg.sender == request.user,
+    } for msg in new_messages]
+
+    return JsonResponse({'messages': messages_data})

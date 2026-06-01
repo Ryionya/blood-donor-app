@@ -12,4 +12,7 @@ urlpatterns = [
     path('voice-intent/',               views.voice_intent_view,        name='voice_intent'),
     path('voice-form-field/',           views.voice_form_field_view,    name='voice_form_field'),
     path('ph-cities/',                  views.ph_cities_view,           name='ph_cities'),
+    path('chat/<int:request_id>/',      views.chat_view,                name='chat'),
+    path('chat/<int:request_id>/send/', views.send_message_view,        name='send_message'),
+    path('chat/<int:request_id>/messages/', views.get_messages_view,    name='get_messages'),
 ]
