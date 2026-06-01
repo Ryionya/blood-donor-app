@@ -518,12 +518,14 @@ def admin_review_donation_log(request, pk):
             profile.is_available = False
             profile.save()
 
+            local_cooldown = timezone.localtime(profile.cooldown_until)
+
             send_notification(
                 user=log.donor,
                 notif_type='log_verified',
                 message=f'Your donation log has been verified! '
                         f'Your 56-day cooldown is now active until '
-                        f'{profile.cooldown_until.strftime("%B %d, %Y")}.'
+                        f'{local_cooldown.strftime("%B %d, %Y")}.'
             )
             messages.success(request, f"{log.donor.username}'s donation log has been verified.")
 
