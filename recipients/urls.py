@@ -10,5 +10,6 @@ urlpatterns = [
     path('incoming/',               views.incoming_requests_view, name='incoming_requests'),
     path('respond/<int:request_id>/', views.respond_request_view,   name='respond_request'),
     path('voice-intent/', views.voice_intent_view, name='voice_intent'),
+    path('voice-form-field/', views.voice_form_field_view, name='voice_form_field'),
     path('ph-cities/', views.ph_cities_view, name='ph_cities'),
 ]

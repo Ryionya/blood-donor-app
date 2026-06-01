@@ -23,6 +23,21 @@
       </div>
 
       <div class="card-body p-4">
+
+        <!-- Voice Form Assistant Button -->
+        <div class="alert alert-light border d-flex align-items-center gap-3 mb-4">
+            <span style="font-size:1.5rem;">🎙️</span>
+            <div class="flex-grow-1">
+                <strong>Fill with Voice</strong>
+                <p class="mb-0 small text-muted">Let our AI guide you through each field using your voice.</p>
+            </div>
+            <button type="button" 
+                    class="btn btn-danger btn-sm"
+                    onclick="startVoiceForm()">
+                Start
+            </button>
+        </div>
+
         <form method="POST" enctype="multipart/form-data">
           {% csrf_token %}
 
@@ -34,6 +49,7 @@
             <input
               type="text"
               name="hospital_name"
+              id="hospital_name_input"
               class="form-control"
               placeholder="e.g. Philippine General Hospital, Santa Rosa, Laguna"
               required
@@ -71,6 +87,7 @@
               <input
                 type="number"
                 name="blood_bags"
+                id="blood_bags_input"
                 class="form-control"
                 min="1"
                 max="20"
@@ -88,6 +105,7 @@
             </label>
             <textarea
               name="message"
+              id="message_input"
               class="form-control"
               rows="4"
               placeholder="Explain your situation briefly — patient name, blood needed, when, etc."
@@ -173,4 +191,224 @@ dateInput.addEventListener('change', function () {
   indicator.classList.remove('d-none');
 });
 </script>
+
+<script>
+// ── Voice Form Assistant ─────────────────────────────────
+(function() {
+
+    const FIELDS = [
+        {
+            id:          'hospital_name_input',
+            name:        'hospital_name',
+            type:        'hospital_name',
+            question_en: 'What is the hospital or clinic name?',
+            question_fil:'Ano ang pangalan ng ospital o klinika?',
+        },
+        {
+            id:          'needed_by_date',
+            name:        'needed_by_date',
+            type:        'date',
+            question_en: 'What date do you need the blood? For example, say June 5.',
+            question_fil:'Kailan mo kailangan ang dugo? Halimbawa, sabihin ang Hunyo 5.',
+        },
+        {
+            id:          'blood_bags_input',
+            name:        'blood_bags',
+            type:        'blood_bags',
+            question_en: 'How many blood bags do you need?',
+            question_fil:'Ilang blood bags ang kailangan mo?',
+        },
+        {
+            id:          'message_input',
+            name:        'message',
+            type:        'message',
+            question_en: 'What is your message to the donor? Explain your situation briefly.',
+            question_fil:'Ano ang mensahe mo sa donor? Ipaliwanag ang iyong sitwasyon.',
+        },
+    ];
+
+    let currentStep = -1; // -1 means not started
+    let isFormMode  = false;
+    let formRecognition = null;
+
+    // ── Speech ──────────────────────────────────────────
+    function speak(text, langOrCallback, onEnd) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Handle both speak(text, onEnd) and speak(text, lang, onEnd)
+        if (typeof langOrCallback === 'function') {
+            utterance.lang = 'en-US';
+            utterance.onend = langOrCallback;
+        } else {
+            utterance.lang = langOrCallback || 'en-US';
+            if (onEnd) utterance.onend = onEnd;
+        }
+        
+        utterance.rate  = 0.95;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function showFormToast(msg, type='info') {
+        const existing = document.getElementById('form-voice-toast');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.id = 'form-voice-toast';
+        toast.className = `alert alert-${type} position-fixed shadow`;
+        toast.style.cssText = 'bottom:80px;right:24px;z-index:9999;min-width:300px;max-width:420px;';
+        toast.innerHTML = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
+    }
+
+    // ── Recognition setup ────────────────────────────────
+    function setupFormRecognition() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) return null;
+
+        const rec = new SR();
+        rec.continuous     = false;
+        rec.interimResults = false;
+        rec.lang           = 'fil-PH';
+
+        rec.onresult = async function(event) {
+            const transcript = event.results[0][0].transcript.trim();
+            showFormToast(`🎙️ Heard: "<strong>${transcript}</strong>"`, 'info');
+            await processFieldAnswer(transcript);
+        };
+
+        rec.onerror = function(event) {
+            if (event.error === 'no-speech') {
+                // Ask again
+                askCurrentField();
+            } else {
+                showFormToast(`⚠️ Error: ${event.error}. Please try again.`, 'warning');
+                speak(`Sorry, I didn't catch that. ${FIELDS[currentStep].question_en}`, () => {
+                    setTimeout(() => formRecognition.start(), 500);
+                });
+            }
+        };
+
+        rec.onend = function() {
+            // Don't auto-restart here — handled after processing
+        };
+
+        return rec;
+    }
+
+    // ── Ask current field ────────────────────────────────
+    function askCurrentField() {
+        if (currentStep >= FIELDS.length) return;
+        const field = FIELDS[currentStep];
+        showFormToast(`🎙️ <strong>Step ${currentStep + 1} of ${FIELDS.length}:</strong> ${field.question_en}`, 'primary');
+        speak(field.question_en, () => {
+            // Start listening after speech ends
+            setTimeout(() => {
+                try { formRecognition.start(); } catch(e) {}
+            }, 300);
+        });
+    }
+
+    // ── Process field answer ─────────────────────────────
+    async function processFieldAnswer(transcript) {
+        const field = FIELDS[currentStep];
+
+        try {
+            const response = await fetch("{% url 'voice_form_field' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({
+                    transcript: transcript,
+                    field_type: field.type,
+                })
+            });
+
+            const data = await response.json();
+            const value = data.value;
+
+            // Fill the form field
+            const input = document.getElementById(field.id) 
+                          || document.querySelector(`[name="${field.name}"]`);
+            
+            if (input && value) {
+                input.value = value;
+
+                // Trigger date change event for urgency indicator
+                if (field.type === 'date') {
+                    input.dispatchEvent(new Event('change'));
+                }
+
+                showFormToast(`✅ <strong>${getFieldLabel(field.type)}:</strong> ${value}`, 'success');
+                speak(`Got it. ${value}.`, () => {
+                    setTimeout(() => nextField(), 800);
+                });
+            } else {
+                speak(`Sorry, I couldn't understand that. ${field.question_en}`, () => {
+                    setTimeout(() => { try { formRecognition.start(); } catch(e) {} }, 300);
+                });
+            }
+
+        } catch(err) {
+            // Fallback — use raw transcript
+            const input = document.querySelector(`[name="${field.name}"]`);
+            if (input) input.value = transcript;
+            speak(`Got it.`, () => {
+                setTimeout(() => nextField(), 800);
+            });
+        }
+    }
+
+    // ── Move to next field ───────────────────────────────
+    function nextField() {
+        currentStep++;
+        if (currentStep < FIELDS.length) {
+            askCurrentField();
+        } else {
+            // All fields done
+            isFormMode = false;
+            showFormToast('✅ <strong>Form filled!</strong> Please attach your medical certificate and click Send Request.', 'success');
+            speak('Form filled! Please attach your medical certificate and click Send Request.', 'en-US');
+
+            // Highlight the file input
+            const fileInput = document.getElementById('medical_certificate');
+            if (fileInput) {
+                fileInput.closest('.mb-4').style.border = '2px solid #dc3545';
+                fileInput.closest('.mb-4').style.borderRadius = '8px';
+                fileInput.closest('.mb-4').style.padding = '10px';
+            }
+        }
+    }
+
+    function getFieldLabel(type) {
+        const labels = {
+            'hospital_name': 'Hospital',
+            'date':          'Date needed',
+            'blood_bags':    'Blood bags',
+            'message':       'Message',
+        };
+        return labels[type] || type;
+    }
+
+    // ── Start form voice assistant ───────────────────────
+    window.startVoiceForm = function() {
+        formRecognition = setupFormRecognition();
+        if (!formRecognition) {
+            alert('Voice not supported. Please use Chrome.');
+            return;
+        }
+        isFormMode  = true;
+        currentStep = 0;
+        showFormToast('🎙️ <strong>Voice Form Assistant started!</strong> I will guide you through each field.', 'primary');
+        speak('Starting voice form assistant. I will ask you each field one by one.', 'en-US', () => {
+            setTimeout(() => askCurrentField(), 500);
+        });
+    };
+
+})();
+</script>
+
 {% endblock %}

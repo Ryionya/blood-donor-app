@@ -184,3 +184,54 @@ Do not include donor names — just describe the best match characteristics."""
 
     except Exception:
         return None
+
+def parse_form_field_answer(transcript, field_type):
+    """
+    Use Groq to extract a specific field value from the user's speech.
+    field_type: 'hospital_name', 'date', 'blood_bags', 'message'
+    """
+    client = get_client()
+    if not client:
+        return {'value': transcript}  # fallback to raw transcript
+
+    prompts = {
+        'hospital_name': f"""Extract the hospital or clinic name from this speech: "{transcript}"
+Return ONLY a JSON object: {{"value": "hospital name here"}}
+If no hospital name found, use the entire transcript as the value.
+Do not include any other text.""",
+
+        'date': f"""Extract a date from this speech: "{transcript}"
+Today is {__import__('datetime').date.today().isoformat()}.
+Convert relative dates like "tomorrow", "next week", "June 5" to YYYY-MM-DD format.
+Return ONLY a JSON object: {{"value": "YYYY-MM-DD"}}
+If no date found, return: {{"value": ""}}
+Do not include any other text.""",
+
+        'blood_bags': f"""Extract a number from this speech: "{transcript}"
+This represents how many blood bags are needed.
+Return ONLY a JSON object: {{"value": 1}}
+Use integer only. If no number found, return: {{"value": 1}}
+Do not include any other text.""",
+
+        'message': f"""Clean up this speech into a proper message for a blood donation request: "{transcript}"
+Return ONLY a JSON object: {{"value": "cleaned message here"}}
+Keep it natural and compassionate. Do not include any other text.""",
+    }
+
+    try:
+        response = client.chat.completions.create(
+            model='llama-3.3-70b-versatile',
+            messages=[
+                {'role': 'user', 'content': prompts[field_type]}
+            ],
+            max_tokens=100,
+            temperature=0.1,
+        )
+
+        import json
+        result = response.choices[0].message.content.strip()
+        result = result.replace('```json', '').replace('```', '').strip()
+        return json.loads(result)
+
+    except Exception:
+        return {'value': transcript}

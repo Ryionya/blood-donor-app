@@ -490,6 +490,25 @@ def voice_intent_view(request):
     except Exception as e:
         return JsonResponse({'type': 'unknown'})
 
+@login_required
+def voice_form_field_view(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        transcript = data.get('transcript', '')
+        field_type = data.get('field_type', '')
+
+        if not transcript or not field_type:
+            return JsonResponse({'value': ''})
+
+        from core.groq_service import parse_form_field_answer
+        result = parse_form_field_answer(transcript, field_type)
+        return JsonResponse(result)
+
+    except Exception:
+        return JsonResponse({'value': transcript})
 
 def ph_cities_view(request):
     try:
