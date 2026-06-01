@@ -46,11 +46,16 @@ def home_view(request):
         latest_application = user.applications.order_by('-submitted_at').first()
         donation_count = user.donation_logs.count()
         pending_incoming = user.received_requests.filter(status='pending').count()
+        total_sent = user.sent_requests.count()
+        accepted_count = user.sent_requests.filter(status='accepted').count()
         context = {
             'donor_profile': donor_profile,
+            'recipient_profile': None,
             'latest_application': latest_application,
             'donation_count': donation_count,
             'pending_incoming': pending_incoming,
+            'total_sent': total_sent,
+            'accepted_count': accepted_count,
         }
 
     elif user.role == 'recipient':

@@ -301,11 +301,17 @@ def cooldown_status_view(request):
         is_rejected=False
     ).exists()
 
+    from recipients.models import BloodRequest
+    donations_completed = donation_logs.filter(is_verified=True).count()
+    requests_accepted = BloodRequest.objects.filter(donor=request.user, status='accepted').count()
+
     return render(request, 'donors/cooldown_status.html', {
         'profile': profile,
         'donation_logs': donation_logs,
         'days_remaining': days_remaining,
         'has_pending_log': has_pending_log,
+        'donations_completed': donations_completed,
+        'requests_accepted': requests_accepted,
     })
 
 

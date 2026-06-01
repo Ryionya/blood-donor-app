@@ -58,32 +58,46 @@ def browse_donors_view(request):
     blood_type = request.GET.get('blood_type', '')
     location   = request.GET.get('location', '')
 
-    # Get recipient's blood type — donors use donor_profile, recipients use recipient_profile
+    # Get recipient's blood type — always check donor_profile first, then recipient_profile
     recipient_blood_type = None
     try:
-        if request.user.role == 'donor':
-            recipient_blood_type = request.user.donor_profile.blood_type
-        else:
-            recipient_blood_type = request.user.recipient_profile.blood_type
+        bt = request.user.donor_profile.blood_type
+        if bt and bt.strip() and bt.strip() != '—':
+            recipient_blood_type = bt.strip()
     except Exception:
         pass
+
+    if not recipient_blood_type:
+        try:
+            bt = request.user.recipient_profile.blood_type
+            if bt and bt.strip() and bt.strip() != '—':
+                recipient_blood_type = bt.strip()
+        except Exception:
+            pass
 
     compatible_types = BLOOD_TYPE_COMPATIBILITY.get(recipient_blood_type, [])
 
     # ── Auto-detect the logged-in user's blood type ───────────────────
-    # Works for both donors and recipients since either can need blood.
-    # We check DonorProfile first, then RecipientProfile as fallback.
     user_blood_type = ''
     try:
-        user_blood_type = request.user.donor_profile.blood_type or ''
+        # Always check donor_profile first (covers donors in recipient mode too)
+        bt = request.user.donor_profile.blood_type
+        if bt:
+            user_blood_type = bt
     except Exception:
         pass
 
     if not user_blood_type:
         try:
-            user_blood_type = request.user.recipient_profile.blood_type or ''
+            bt = request.user.recipient_profile.blood_type
+            if bt:
+                user_blood_type = bt
         except Exception:
             pass
+
+    # Also sync recipient_blood_type with user_blood_type if it came back empty
+    if not recipient_blood_type and user_blood_type:
+        recipient_blood_type = user_blood_type
 
     # ── Base queryset ─────────────────────────────────────────────────
     donors = DonorProfile.objects.filter(
@@ -151,6 +165,8 @@ def browse_donors_view(request):
         'ai_recommendation': ai_recommendation,
         'recipient_blood_type': recipient_blood_type,
         'compatible_types': compatible_types,
+        'display_blood_type': user_blood_type,
+        'user_blood_type': user_blood_type,
     })
 
 
@@ -320,8 +336,13 @@ def my_requests_view(request):
         recipient=request.user,
     ).select_related('donor', 'donor__donor_profile').order_by('-created_at')
 
+    sent_count = requests_qs.count()
+    accepted_count = requests_qs.filter(status='accepted').count()
+
     return render(request, 'recipients/my_requests.html', {
         'blood_requests': requests_qs,
+        'sent_count': sent_count,
+        'accepted_count': accepted_count,
     })
 
 
