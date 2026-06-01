@@ -22,10 +22,11 @@ NAVIGATION_PAGES = {
     'apply_donor':              'Apply as a donor, donor application form, apply',
     'profile_setup':            'My profile, edit profile, update profile, profile settings',
     'change_password':          'Change password, update password, new password, edit password',
+    'faq':                      'FAQ, how it works, frequently asked questions, FAQ & How it works',
     'notifications_page':       'Notifications, my notifications, alerts',
     'switch_role':              'Switch role, switch to recipient, switch to donor, change role',
-    'send_request':   'Send donation request, request blood, ask for donation, send request to donor',
-    'download_card':  'Download donor card, print donor card, save donor card, download card',
+    'send_request':             'Send donation request, request blood, ask for donation, send request to donor',
+    'download_card':            'Download donor card, print donor card, save donor card, download card',
     'logout':                   'Logout, log out, sign out',
 
     # Admin

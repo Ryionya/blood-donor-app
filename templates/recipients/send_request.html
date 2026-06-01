@@ -397,7 +397,7 @@ dateInput.addEventListener('change', function () {
     window.startVoiceForm = function() {
         formRecognition = setupFormRecognition();
         if (!formRecognition) {
-            alert('Voice not supported. Please use Chrome.');
+            alert('Voice recognition is not supported in this browser.\n\nPlease use:\n• Google Chrome\n• Microsoft Edge\n• Brave (enable fingerprinting in Shield settings)\n\nSafari has limited support.');
             return;
         }
         isFormMode  = true;

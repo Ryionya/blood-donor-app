@@ -416,7 +416,7 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
             btn.disabled = true;
-            btn.title = 'Voice not supported. Use Chrome.';
+            btn.title = 'Voice not supported. Please use Chrome, Edge, or enable permissions in Brave.';
             btn.style.opacity = '0.4';
             return;
         }
