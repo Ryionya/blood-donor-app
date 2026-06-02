@@ -1,79 +1,547 @@
-{% extends 'base.html' %}
-{% block title %}Login — BloodLink{% endblock %}
+{% load static %}
+{% load pwa %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  {% progressive_web_app_meta %}
+  <title>BloodLink — Find Blood Donors Near You</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --red: #C0392B;
+      --red-light: #E8534A;
+      --red-pale: #FFF0EE;
+      --navy: #1a1a2e;
+      --text: #1a1a2e;
+      --muted: #6b7280;
+      --border: rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; color: var(--text); background: #fff; overflow-x: hidden; }
 
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h3 class="card-title text-danger mb-4">Welcome Back</h3>
-                <form method="post">
-                    {% csrf_token %}
-                    {% for field in form %}
-                    <div class="mb-3">
-                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        
-                        {% if field.field.widget.input_type == 'password' %}
-                        <div class="input-group">
-                            <input type="password"
-                                  name="{{ field.html_name }}"
-                                  id="{{ field.id_for_label }}"
-                                  class="form-control {% if field.errors %}is-invalid{% endif %}">
-                            <button class="btn btn-outline-secondary" 
-                                    type="button"
-                                    onclick="togglePassword('{{ field.id_for_label }}')"
-                                    title="Show/Hide password">
-                                <i class="fa-solid fa-eye" id="icon-{{ field.id_for_label }}"></i>
-                            </button>
-                        </div>
-                        {% else %}
-                        <input type="{{ field.field.widget.input_type }}"
-                              name="{{ field.html_name }}"
-                              id="{{ field.id_for_label }}"
-                              class="form-control {% if field.errors %}is-invalid{% endif %}">
-                        {% endif %}
-                        
-                        {% for error in field.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                    {% endfor %}
-                    
-                    <p class="text-center mt-2">
-                        <a href="{% url 'password_reset' %}" class="text-muted small">
-                            Forgot your password?
-                        </a>
-                    </p>
+    /* ── NAVBAR ── */
+    #main-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 1rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      transform: translateY(-100%);
+      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), background 0.3s ease, box-shadow 0.3s ease;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+    }
+    #main-nav.visible { transform: translateY(0); }
+    .nav-brand { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; }
+    .nav-brand-text { font-family: 'DM Serif Display', serif; font-size: 1.3rem; color: var(--navy); letter-spacing: -0.02em; }
+    .nav-brand-text span { color: var(--red); }
+    .nav-links { display: flex; align-items: center; gap: 0.5rem; }
+    .nav-links a.btn-nav-outline {
+      padding: 0.4rem 1.1rem; border-radius: 2rem; font-size: 0.85rem; font-weight: 500;
+      border: 1.5px solid var(--border); color: var(--text); text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .nav-links a.btn-nav-outline:hover { border-color: var(--red); color: var(--red); background: var(--red-pale); }
+    .nav-links a.btn-nav-fill {
+      padding: 0.4rem 1.2rem; border-radius: 2rem; font-size: 0.85rem; font-weight: 500;
+      background: var(--red); color: #fff; text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .nav-links a.btn-nav-fill:hover { background: var(--red-light); transform: translateY(-1px); }
 
-                    <!-- Remember Me -->
-                    <div class="form-check mb-3">
-                        <input type="checkbox" class="form-check-input" name="remember_me" id="rememberMe">
-                        <label class="form-check-label text-muted" for="rememberMe">Remember me for 30 days</label>
-                    </div>
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      padding: 0 6vw 0 12vw;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg-gradient {
+      position: absolute; top: 0; right: 0;
+      width: 55%; height: 100%;
+      background: radial-gradient(ellipse at 70% 40%, rgba(192,57,43,0.08) 0%, rgba(192,57,43,0.03) 50%, transparent 75%);
+      pointer-events: none; z-index: 0;
+    }
+    .hero-left { position: relative; z-index: 1; }
+    .hero-logo { margin-bottom: 1.8rem; }
+    .hero-logo img { height: 72px; width: auto; }
+    @media (max-width: 1024px) { .hero-logo img { height: 60px; } }
+    .hero-logo-fallback {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem; color: var(--navy); letter-spacing: -0.02em;
+      display: flex; align-items: center; gap: 0.3rem;
+    }
+    .hero-logo-fallback .heart { color: var(--red); }
+    .hero-tagline {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.9rem, 3.2vw, 2.8rem);
+      line-height: 1.2;
+      color: var(--navy);
+      letter-spacing: -0.03em;
+      margin-bottom: 1.2rem;
+    }
+    .hero-tagline em { font-style: italic; color: var(--red); }
+    .hero-sub {
+      font-size: clamp(0.9rem, 1.3vw, 1rem);
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 400px;
+      margin-bottom: 2rem;
+    }
+    .hero-actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .btn-hero-primary {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.72rem 1.6rem; border-radius: 2rem;
+      background: var(--red); color: #fff;
+      font-weight: 600; font-size: 0.92rem; text-decoration: none;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(192,57,43,0.25);
+    }
+    .btn-hero-primary:hover { background: var(--red-light); transform: translateY(-2px); box-shadow: 0 6px 24px rgba(192,57,43,0.32); color: #fff; }
+    .btn-hero-secondary {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.72rem 1.4rem; border-radius: 2rem;
+      border: 1.5px solid var(--border); color: var(--text);
+      font-weight: 500; font-size: 0.92rem; text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .btn-hero-secondary:hover { border-color: var(--red); color: var(--red); background: var(--red-pale); }
+    .hero-right {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; justify-content: center;
+      padding: 3rem 0 3rem 2rem;
+    }
+    .hero-illustration {
+      width: 100%; max-width: 500px;
+      animation: float 6s ease-in-out infinite;
+      filter: drop-shadow(0 24px 48px rgba(192,57,43,0.12));
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      33% { transform: translateY(-12px) rotate(0.5deg); }
+      66% { transform: translateY(-6px) rotate(-0.3deg); }
+    }
 
-                    <button type="submit" class="btn btn-danger w-100">Log In</button>
+    /* ── LOGIN SECTION ── */
+    #login-section {
+      padding: 6rem 2rem;
+      background: #fafafa;
+      position: relative;
+    }
+    #login-section::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 1px; background: var(--border);
+    }
+    .login-card {
+      max-width: 440px; margin: 0 auto;
+      background: #fff; border-radius: 1.5rem;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+      padding: 2.5rem;
+    }
+    .login-card-header { text-align: center; margin-bottom: 2rem; }
+    .login-logo-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      overflow: hidden; margin: 0 auto 1rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-logo-icon img { width: 100%; height: 100%; object-fit: contain; }
+    .login-card-header h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.7rem; color: var(--navy); letter-spacing: -0.02em;
+      margin-bottom: 0.3rem;
+    }
+    .login-card-header p { font-size: 0.9rem; color: var(--muted); }
+    .form-label-custom { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 0.4rem; display: block; letter-spacing: 0.01em; }
+    .form-control-custom {
+      width: 100%; padding: 0.7rem 1rem; border-radius: 0.75rem;
+      border: 1.5px solid var(--border); font-size: 0.9rem; font-family: 'DM Sans', sans-serif;
+      color: var(--text); background: #fff; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none; -webkit-appearance: none;
+    }
+    .form-control-custom:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(192,57,43,0.1); }
+    .input-wrapper { position: relative; }
+    .input-wrapper .toggle-eye {
+      position: absolute; right: 0.9rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      font-size: 0.95rem; padding: 0.2rem;
+    }
+    .input-wrapper .toggle-eye:hover { color: var(--text); }
+    .form-group { margin-bottom: 1.1rem; }
+    .form-check-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.4rem; flex-wrap: wrap; gap: 0.5rem;
+    }
+    .check-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--muted); cursor: pointer; }
+    .check-label input[type=checkbox] { accent-color: var(--red); width: 14px; height: 14px; }
+    .forgot-link { font-size: 0.82rem; color: var(--red); text-decoration: none; }
+    .forgot-link:hover { text-decoration: underline; }
+    .btn-submit {
+      width: 100%; padding: 0.8rem; border-radius: 2rem;
+      background: var(--red); color: #fff; border: none;
+      font-size: 0.95rem; font-weight: 600; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(192,57,43,0.2);
+    }
+    .btn-submit:hover { background: var(--red-light); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(192,57,43,0.28); }
+    .btn-submit:active { transform: translateY(0); }
+    .divider { display: flex; align-items: center; gap: 1rem; margin: 1rem 0 0.75rem; }
+    .divider hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+    .divider span { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+    .error-inline { font-size: 0.78rem; color: var(--red); margin-top: 0.3rem; display: block; }
+    .btn-register-outline {
+      display: block; text-align: center; padding: 0.75rem;
+      border-radius: 2rem; border: 1.5px solid var(--border);
+      font-size: 0.9rem; font-weight: 500; color: var(--text);
+      text-decoration: none;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+    }
+    .btn-register-outline:hover { border-color: var(--red); color: var(--red); background: var(--red-pale); }
 
-                    <div class="text-center mt-3">
-                        <small class="text-muted">
-                            By logging in, you agree to our
-                            <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>.
-                        </small>
-                    </div>
-                </form>
-                <p class="text-center mt-3 text-muted">
-                    No account yet? <a href="{% url 'register' %}">Register</a>
-                </p>
-            </div>
-        </div>
+    /* ── FEATURES ── */
+    #features { padding: 6rem 2rem; }
+    .section-label {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--red); margin-bottom: 0.75rem;
+    }
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.8rem, 3vw, 2.4rem); color: var(--navy);
+      letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 1rem;
+    }
+    .section-sub { font-size: 1rem; color: var(--muted); max-width: 480px; line-height: 1.7; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      margin-top: 3rem;
+    }
+    .feature-card {
+      padding: 1.6rem; border-radius: 1rem;
+      border: 1px solid var(--border); background: #fff;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    }
+    .feature-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.08); border-color: rgba(192,57,43,0.2); }
+    .feature-icon {
+      width: 42px; height: 42px; border-radius: 0.65rem;
+      background: var(--red-pale); color: var(--red);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; margin-bottom: 0.9rem;
+    }
+    .feature-card h3 { font-size: 0.95rem; font-weight: 600; color: var(--navy); margin-bottom: 0.4rem; }
+    .feature-card p { font-size: 0.84rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── HOW IT WORKS ── */
+    #how-it-works { padding: 5rem 2rem; background: #fafafa; }
+    .steps-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+    .step { text-align: center; }
+    .step-num {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--red); color: #fff;
+      font-size: 0.9rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+    }
+    .step h4 { font-size: 0.95rem; font-weight: 600; color: var(--navy); margin-bottom: 0.4rem; }
+    .step p { font-size: 0.84rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--navy); color: rgba(255,255,255,0.6);
+      padding: 2.5rem 2rem; text-align: center;
+      font-size: 0.82rem;
+    }
+    .footer-logo { height: 36px; width: auto; margin-bottom: 0.75rem; }
+    .footer-logo-fallback {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.2rem; color: #fff; margin-bottom: 0.5rem;
+    }
+    footer a { color: rgba(255,255,255,0.5); text-decoration: none; }
+    footer a:hover { color: #fff; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      #hero { padding: 0 4vw 0 8vw; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .steps-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      #hero {
+        grid-template-columns: 1fr; min-height: 100vh; height: 100vh;
+        padding: 5rem 1.5rem 2rem; text-align: center; gap: 1.2rem;
+        overflow: hidden; justify-content: center;
+      }
+      .hero-right { padding: 0; order: -1; }
+      .hero-illustration { max-width: 260px; }
+      .hero-sub { margin-left: auto; margin-right: auto; }
+      .hero-actions { justify-content: center; }
+      .hero-logo { display: flex; justify-content: center; }
+      #main-nav { padding: 0.75rem 1.25rem; }
+      .nav-links a.btn-nav-outline { display: none; }
+      .features-grid { grid-template-columns: 1fr; }
+      .steps-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .login-card { padding: 1.75rem 1.25rem; border-radius: 1rem; }
+      .hero-tagline { font-size: 1.75rem; }
+    }
+
+    /* ── FADE IN ── */
+    .fade-up {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
+    }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+    .features-grid .feature-card:nth-child(2) { transition-delay: 0.07s; }
+    .features-grid .feature-card:nth-child(3) { transition-delay: 0.14s; }
+    .features-grid .feature-card:nth-child(4) { transition-delay: 0.07s; }
+    .features-grid .feature-card:nth-child(5) { transition-delay: 0.14s; }
+    .features-grid .feature-card:nth-child(6) { transition-delay: 0.21s; }
+    .steps-row .step:nth-child(2) { transition-delay: 0.08s; }
+    .steps-row .step:nth-child(3) { transition-delay: 0.16s; }
+    .steps-row .step:nth-child(4) { transition-delay: 0.24s; }
+  </style>
+</head>
+<body>
+
+<!-- ── STICKY NAV ── -->
+<nav id="main-nav">
+  <a class="nav-brand" href="/">
+    <img src="{% static 'images/logo-dark.png' %}" alt="BloodLink" height="32"
+         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    <span class="nav-brand-text" style="display:none;">bl<span>♥</span>dlink</span>
+  </a>
+  <div class="nav-links">
+    <a href="#features" class="btn-nav-outline">Features</a>
+    <a href="#how-it-works" class="btn-nav-outline">How it works</a>
+    <a href="#login-section" class="btn-nav-outline">Log in</a>
+    <a href="{% url 'register' %}" class="btn-nav-fill">Sign up free</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="hero-bg-gradient"></div>
+
+  <div class="hero-left">
+    <div class="hero-logo">
+      <img src="{% static 'images/logo-dark.png' %}" alt="BloodLink"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="hero-logo-fallback" style="display:none;">
+        bl<span class="heart">♥</span>dlink
+      </div>
     </div>
-</div>
 
-<!-- Privacy Modal -->
+    <h1 class="hero-tagline">
+      The right blood type.<br>
+      The right person.<br>
+      <em>Right now.</em>
+    </h1>
+    <p class="hero-sub">
+      A community-powered platform connecting blood donors with recipients across Laguna. Fast, verified, and built for emergencies.
+    </p>
+    <div class="hero-actions">
+      <a href="{% url 'register' %}" class="btn-hero-primary">
+        <i class="fa-solid fa-heart-pulse"></i> Get Started
+      </a>
+      <a href="#login-section" class="btn-hero-secondary">
+        <i class="fa-solid fa-right-to-bracket"></i> Log in
+      </a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <img src="{% static 'images/landing.png' %}" alt="Blood donation illustration"
+         class="hero-illustration"
+         onerror="this.style.opacity='0';">
+  </div>
+</section>
+
+<!-- ── LOGIN CARD ── -->
+<section id="login-section">
+  <div class="login-card">
+    <div class="login-card-header">
+      <div class="login-logo-icon">
+        <img src="{% static 'images/icon-512.png' %}" alt="BloodLink">
+      </div>
+      <h2>Welcome back</h2>
+      <p>Log in to find donors or manage your profile</p>
+    </div>
+
+    {% if form.non_field_errors %}
+    <div style="background:#fff0ee; border:1px solid rgba(192,57,43,0.2); border-radius:0.75rem; padding:0.75rem 1rem; margin-bottom:1.2rem; font-size:0.85rem; color:var(--red);">
+      <i class="fa-solid fa-circle-exclamation me-1"></i>
+      {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label-custom" for="id_username">Username</label>
+        <input type="text" name="username" id="id_username"
+               class="form-control-custom"
+               placeholder="Your username"
+               value="{{ form.username.value|default:'' }}"
+               autocomplete="username">
+        {% for error in form.username.errors %}
+          <span class="error-inline"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label-custom" for="id_password">Password</label>
+        <div class="input-wrapper">
+          <input type="password" name="password" id="id_password"
+                 class="form-control-custom"
+                 placeholder="Your password"
+                 autocomplete="current-password">
+          <button type="button" class="toggle-eye" onclick="togglePw()" title="Show/hide password">
+            <i class="fa-solid fa-eye" id="eye-icon"></i>
+          </button>
+        </div>
+        {% for error in form.password.errors %}
+          <span class="error-inline"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-check-row">
+        <label class="check-label">
+          <input type="checkbox" name="remember_me" id="rememberMe">
+          Remember me for 30 days
+        </label>
+        <a href="{% url 'password_reset' %}" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-submit">
+        <i class="fa-solid fa-right-to-bracket me-2"></i> Log In
+      </button>
+    </form>
+
+    <div class="divider"><hr><span>new to bloodlink?</span><hr></div>
+
+    <a href="{% url 'register' %}" class="btn-register-outline">
+      Create a free account
+    </a>
+
+    <p style="text-align:center; font-size:0.75rem; color:var(--muted); margin-top:1rem; line-height:1.5;">
+      By continuing, you agree to our
+      <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal" style="color:var(--red); text-decoration:none;">Privacy Policy</a>
+    </p>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section id="features">
+  <div style="max-width:1100px; margin:0 auto;">
+    <div class="fade-up">
+      <p class="section-label">Features</p>
+      <h2 class="section-title">Built for real<br>emergencies</h2>
+      <p class="section-sub">Every feature is designed for speed. When someone needs blood, every second matters.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card fade-up">
+        <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h3>Verified Donors Only</h3>
+        <p>Every donor goes through admin document review before they appear in search. No fakes, no unreliable matches.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <div class="feature-icon"><i class="fa-solid fa-microphone"></i></div>
+        <h3>Voice Search</h3>
+        <p>Say "Find me an O positive donor in Santa Rosa" and the system filters instantly — hands-free for emergencies.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <div class="feature-icon"><i class="fa-solid fa-mobile-screen"></i></div>
+        <h3>Works Like an App</h3>
+        <p>Install BloodLink on your phone's home screen. Push notifications for requests, even when the browser is closed.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <div class="feature-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        <h3>56-Day Cooldown Tracker</h3>
+        <p>Donors are automatically marked unavailable after a donation and return to active status exactly when eligible.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <div class="feature-icon"><i class="fa-solid fa-lock"></i></div>
+        <h3>Contact Info Protected</h3>
+        <p>Donor contact details are only revealed to a recipient once the donor accepts their request. Privacy first.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <div class="feature-icon"><i class="fa-solid fa-wifi"></i></div>
+        <h3>Offline Donor Card</h3>
+        <p>Once verified, your blood type card is cached offline so you can show it at a hospital even without internet.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how-it-works">
+  <div style="max-width:1100px; margin:0 auto;">
+    <div class="fade-up" style="text-align:center;">
+      <p class="section-label">How it works</p>
+      <h2 class="section-title">Simple. Fast. Life-saving.</h2>
+    </div>
+    <div class="steps-row">
+      <div class="step fade-up">
+        <div class="step-num">1</div>
+        <h4>Create an account</h4>
+        <p>Register as a donor, recipient, or both. Set up your blood type and location.</p>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num">2</div>
+        <h4>Get verified</h4>
+        <p>Upload your government ID and medical certificate. Admin reviews and approves.</p>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num">3</div>
+        <h4>Search by voice or filter</h4>
+        <p>Recipients browse verified donors by blood type and location, or use voice search.</p>
+      </div>
+      <div class="step fade-up">
+        <div class="step-num">4</div>
+        <h4>Connect and donate</h4>
+        <p>Donor accepts the request. Contact info is shared. Lives are saved.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div style="margin-bottom:0.75rem;">
+    <img src="{% static 'images/logo-light.png' %}" alt="BloodLink" class="footer-logo"
+         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+    <div class="footer-logo-fallback" style="display:none;">bl♥dlink</div>
+  </div>
+  <p style="margin-bottom:1rem;">Connecting blood donors and recipients across Laguna, Philippines.</p>
+  <div style="display:flex; gap:1.5rem; justify-content:center; margin-bottom:1.5rem; flex-wrap:wrap;">
+    <a href="{% url 'register' %}">Sign Up</a>
+    <a href="#login-section">Log In</a>
+    <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy</a>
+  </div>
+  <p style="font-size:0.75rem; opacity:0.5;">© 2026 BloodLink · Polytechnic University of the Philippines - Santa Rosa Campus · BSIT 3-2 (AY 2025-2026)</p>
+  <p style="font-size:0.75rem; opacity:0.35; margin-top:0.3rem;">Jose · Mendez · Mendoza · Sumiran</p>
+</footer>
+
+<!-- ── PRIVACY MODAL ── -->
 <div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg">
     <div class="modal-content rounded-4 overflow-hidden">
-
-      <!-- Header -->
       <div class="modal-header bg-danger text-white border-0 py-3">
         <div class="d-flex align-items-center gap-2">
           <i class="fa-solid fa-shield-halved fs-4"></i>
@@ -81,13 +549,8 @@
         </div>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-
       <div class="modal-body px-4 py-3">
-        <p class="text-muted" style="font-size:12px;">
-          <i class="fa-regular fa-clock me-1"></i>Last updated: May 2026
-        </p>
-
-        <!-- Section 1 -->
+        <p class="text-muted" style="font-size:12px;"><i class="fa-regular fa-clock me-1"></i>Last updated: May 2026</p>
         <div class="d-flex gap-3 mb-4">
           <div class="text-danger mt-1"><i class="fa-solid fa-database fs-5"></i></div>
           <div>
@@ -118,10 +581,7 @@
           <div class="text-danger mt-1"><i class="fa-solid fa-lock fs-5"></i></div>
           <div>
             <h6 class="fw-bold mb-1">How we store your data</h6>
-            <p class="text-muted mb-0" style="font-size:14px;">
-              Your data is stored securely in our database. Uploaded documents are stored on our
-              servers and are only accessible to authorized administrators for verification purposes.
-            </p>
+            <p class="text-muted mb-0" style="font-size:14px;">Your data is stored securely in our database. Uploaded documents are stored on our servers and are only accessible to authorized administrators for verification purposes.</p>
           </div>
         </div>
         <div class="d-flex gap-3 mb-4">
@@ -139,41 +599,41 @@
           <div class="text-danger mt-1"><i class="fa-solid fa-user-shield fs-5"></i></div>
           <div>
             <h6 class="fw-bold mb-1">Your rights</h6>
-            <p class="text-muted mb-0" style="font-size:14px;">
-              You may contact the BloodLink admin team for any concerns regarding your personal data.
-              Please note that admin capabilities are limited to reviewing and approving or rejecting
-              donor applications and viewing user profiles. Data modification or account removal is
-              not currently supported.
-            </p>
+            <p class="text-muted mb-0" style="font-size:14px;">You may contact the BloodLink admin team for any concerns regarding your personal data. Please note that admin capabilities are limited to reviewing and approving or rejecting donor applications and viewing user profiles. Data modification or account removal is not currently supported.</p>
           </div>
         </div>
-
-      <!-- Footer -->
+      </div>
       <div class="modal-footer border-0 bg-light">
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
         <button type="button" class="btn btn-danger btn-sm px-4" data-bs-dismiss="modal">
           <i class="fa-solid fa-check me-1"></i> I Understand
         </button>
       </div>
-
     </div>
   </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function togglePassword(inputId) {
-    const input = document.getElementById(inputId);
-    const icon = document.getElementById('icon-' + inputId);
-    
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.className = 'fa-solid fa-eye-slash';
-    } else {
-        input.type = 'password';
-        icon.className = 'fa-solid fa-eye';
-    }
-}
+  const nav = document.getElementById('main-nav');
+  const hero = document.getElementById('hero');
+  const heroObs = new IntersectionObserver(([e]) => {
+    nav.classList.toggle('visible', !e.isIntersecting);
+  }, { threshold: 0.1 });
+  heroObs.observe(hero);
+
+  const fadeEls = document.querySelectorAll('.fade-up');
+  const fadeObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  fadeEls.forEach(el => fadeObs.observe(el));
+
+  function togglePw() {
+    const inp = document.getElementById('id_password');
+    const ico = document.getElementById('eye-icon');
+    if (inp.type === 'password') { inp.type = 'text'; ico.className = 'fa-solid fa-eye-slash'; }
+    else { inp.type = 'password'; ico.className = 'fa-solid fa-eye'; }
+  }
 </script>
-{% endblock %}
+</body>
+</html>
