@@ -1,4 +1,6 @@
 #Day 2
+from email.mime import application
+
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
@@ -126,11 +128,21 @@ def admin_review_application(request, pk):
 
             application.donor.save()
 
+            # flag rejection
+            send_notification(
+                 user=application.donor,
+                notif_type='rejected',
+                message=suspension_msg,
+                link='/donors/my-application/',
+                )
+
+            # action == 'reject'
             send_notification(
                 user=application.donor,
                 notif_type='rejected',
-                message=suspension_msg,
-            )
+                message=f'Your donor application was not approved. Reason: {note}',
+                link='/donors/my-application/',
+                )
 
             messages.warning(request, f"{application.donor.username} has been flagged (flag count: {application.donor.flag_count}).")
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bloodlink-v5';
+const CACHE_NAME = 'bloodlink-v8';
 
 // Safe static assets only
 const STATIC_ASSETS = [
@@ -10,6 +10,9 @@ const STATIC_ASSETS = [
     // Bootstrap CDN
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js',
+
+    // QR Code library
+    'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
 ];
 
 // INSTALL
@@ -117,7 +120,7 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    // DONOR CARD → NETWORK FIRST, CACHE FOR OFFLINE
+// DONOR CARD → NETWORK FIRST, CACHE FOR OFFLINE
     if (url.pathname.startsWith('/recipients/donor/')) {
 
         event.respondWith(
@@ -126,26 +129,29 @@ self.addEventListener('fetch', event => {
 
                 return fetch(event.request)
                     .then(response => {
-
-                        // Save a fresh copy whenever online
-                        if (response && response.status === 200 && !response.redirected) {
+                        // Save a fresh copy whenever online (including redirects this time)
+                        if (response && response.status === 200) {  // ← remove !response.redirected
                             cache.put(event.request, response.clone());
                         }
-
                         return response;
                     })
 
                     .catch(() => {
-                        // Offline → serve cached card
-                        return caches.match(event.request);
+                        return caches.match(event.request).then(cached => {
+                            // Return cached or a friendly fallback
+                            return cached || new Response(
+                                '<h2 style="font-family:sans-serif;text-align:center;margin-top:2rem">You are offline. Please visit this donor card while connected first.</h2>',
+                            { headers: { 'Content-Type': 'text/html' } }
+                        );
                     });
+                });
 
-            })
+        })
 
-        );
+    );
 
-        return;
-    }
+    return;
+}
 
     // DYNAMIC PAGES → NETWORK FIRST
     event.respondWith(

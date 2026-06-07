@@ -203,6 +203,7 @@ PWA_APP_SCOPE = '/'
 PWA_APP_ORIENTATION = 'portrait'
 PWA_APP_STATUS_BAR_COLOR = 'default'
 PWA_APP_START_URL = '/'
+PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'static', 'js', 'service-worker.js')
 PWA_APP_ICONS = [
     {
         'src': '/static/images/icon-192.png',
