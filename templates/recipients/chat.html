@@ -14,7 +14,7 @@
 {% endif %}
             <div>
                 <h5 class="mb-0 fw-bold">
-                    💬 Chat with {{ other_user.username }}
+                    💬 Chat with {{ other_user.get_full_name|default:other_user.username }}
                 </h5>
                 <small class="text-muted">
                     🩸 {{ blood_request.donor.donor_profile.blood_type }} · 
