@@ -35,7 +35,6 @@
           * {
             font-family: 'Poppins', sans-serif;
           }
-          /* Pulse animation for the mic button while listening */
           @keyframes mic-pulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.5); }
             50%       { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
@@ -43,22 +42,25 @@
           .btn-danger#voice-btn {
             animation: mic-pulse 1s infinite;
           }
-
-        /* Prevent nav dropdowns from stretching navbar on small screens */
-        .navbar .dropdown-menu {
-          position: absolute !important;
-        }
-        .navbar .nav-item.dropdown,
-        .navbar .dropdown {
-          position: relative;
-        }
+          .navbar .dropdown-menu {
+            position: absolute !important;
+          }
+          .navbar .nav-item.dropdown,
+          .navbar .dropdown {
+            position: relative;
+          }
+          .dropdown-menu[aria-labelledby="notifDropdown"] {
+            min-width: 300px;
+            max-width: calc(100vw - 32px);
+            max-height: 70vh;
+            overflow-y: auto;
+          }
         </style>
 
         {% block extra_css %}{% endblock %}
       </head>
 
       <body>
-        <!-- ── Navbar ──────────────────────────────────────────────── -->
         <nav class="navbar navbar-expand-lg"
              style="background:white; margin:12px auto; max-width:1320px; width:calc(100% - 24px);
                     border-radius:50px; box-shadow:0 2px 16px rgba(0,0,0,0.10);
@@ -79,27 +81,40 @@
                   {% if user.role == 'donor' or user.role == 'recipient' %}
                     <li class="nav-item">
                       <div class="dropdown me-2">
+
+                        <!-- Wide screens (lg+): bell opens dropdown popup -->
                         <button
-                          class="btn btn-link position-relative p-2"
+                          class="btn btn-link position-relative p-2 d-none d-lg-flex align-items-center"
                           id="notifDropdown"
                           data-bs-toggle="dropdown"
                           aria-expanded="false"
-                          style="color:#c0392b;"
+                          style="color:#c0392b;text-decoration:none;outline:none;"
                         >
-                          <i class="fa-solid fa-bell" style="font-size: 20px"></i>
+                          <i class="fa-solid fa-bell" style="font-size:20px"></i>
                           {% if unread_count %}
-                            <span
-                              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white"
-                              style="font-size: 10px"
-                            >
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white" style="font-size:10px;min-width:16px;">
                               {{ unread_count }}
                             </span>
                           {% endif %}
                         </button>
 
+                        <!-- Small/medium screens (below lg): bell links directly to notif page -->
+                        <a
+                          href="{% url 'notifications_page' %}"
+                          class="btn btn-link position-relative p-2 d-flex d-lg-none align-items-center"
+                          style="color:#c0392b;text-decoration:none;outline:none;"
+                        >
+                          <i class="fa-solid fa-bell" style="font-size:20px"></i>
+                          {% if unread_count %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white" style="font-size:10px;min-width:16px;">
+                              {{ unread_count }}
+                            </span>
+                          {% endif %}
+                        </a>
+
                         <ul
                           class="dropdown-menu dropdown-menu-end"
-                          style="min-width: 280px"
+                          style="min-width:280px"
                           aria-labelledby="notifDropdown"
                         >
                           <li><h6 class="dropdown-header">Notifications</h6></li>
@@ -122,29 +137,25 @@
   <a class="dropdown-item py-2 rounded-3 {% if not notif.is_read %}bg-secondary-subtle border-start border-4 border-danger fw-semibold{% endif %}"
     href="{% url 'mark_single_notification_read' notif.pk %}?next={% url 'my_application' %}">
 {% endif %}
-                                <div style="font-size: 13px {% if not notif.is_read %}; font-weight:600{% endif %}">
+                                <div style="font-size:13px {% if not notif.is_read %}; font-weight:600{% endif %}">
                                   {{ notif.message }}
                                 </div>
-                                <div style="font-size: 11px; color: #888">
+                                <div style="font-size:11px; color:#888">
                                   {{ notif.created_at|localtime|timesince }} ago
                                 </div>
                               </a>
                             </li>
                           {% empty %}
                             <li>
-                              <span class="dropdown-item text-muted" style="font-size: 13px">
+                              <span class="dropdown-item text-muted" style="font-size:13px">
                                 No new notifications
                               </span>
                             </li>
                           {% endfor %}
 
-                          <li><hr class="dropdown-divider" /></li>
+                          <li><hr class="dropdown-divider"/></li>
                           <li>
-                            <a
-                              class="dropdown-item text-center"
-                              style="font-size: 13px; color: #185fa5"
-                              href="{% url 'notifications_page' %}"
-                            >
+                            <a class="dropdown-item text-center" style="font-size:13px; color:#185fa5" href="{% url 'notifications_page' %}">
                               View all notifications →
                             </a>
                           </li>
@@ -174,14 +185,12 @@
                             </span>
                           {% endif %}
                       </a>
-
                       <ul class="dropdown-menu dropdown-menu-end">
                           <li>
                               <a class="dropdown-item" href="{% url 'profile_setup' %}">
                                   <i class="fa-solid fa-user me-2"></i>My Profile
                               </a>
                           </li>
-
                           {% if user.role == 'donor' %}
                           <li>
                               <a class="dropdown-item" href="{% url 'my_application' %}">
@@ -189,13 +198,11 @@
                               </a>
                           </li>
                           {% endif %}
-
                           <li>
                               <a class="dropdown-item" href="{% url 'change_password' %}">
                                   <i class="fa-solid fa-lock me-2"></i>Change Password
                               </a>
                           </li>
-
                           <li>
                               <a class="dropdown-item" href="{% url 'faq' %}">
                                   <i class="fa-solid fa-circle-question me-2"></i>FAQ & How It Works
@@ -224,39 +231,86 @@
             </div>
           </div>
         </nav>
-        <!-- ── End Navbar ──────────────────────────────────────────── -->
 
         <main class="container mt-4 pb-5">
           {% block content %}{% endblock %}
         </main>
 
-        <!-- Bootstrap JS -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
         {% load webpush_notifications %}
 
-        <!-- Push Notification Support -->
         {% if user.is_authenticated %}
             {% webpush_header %}
         {% endif %}
 
-        <!-- Select2 JS -->
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
         {% block extra_js %}{% endblock %}
 
     {% if user.is_authenticated %}
 
-    <!-- ── Floating Mic Button ── -->
-    <div id="voice-fab-wrapper"
-     style="position:fixed; bottom:24px; right:24px; z-index:10000; display:flex; flex-direction:column; align-items:flex-end; gap:10px;">
+    <style>
+  #voice-fab-wrapper {
+    position: fixed;
+    bottom: 24px;
+    right: 12px;
+    left: 12px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    pointer-events: none;
+  }
+  #voice-fab-wrapper > * { pointer-events: auto; }
+  .bl-toast-card {
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+  }
+  @media (min-width: 480px) {
+    #voice-fab-wrapper {
+      left: auto;
+      right: 24px;
+      width: 400px;
+    }
+  }
+  #installCardInner {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 16px;
+    padding: 14px 16px 14px 16px;
+    padding-right: 52px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  #installCard .bl-logo-wrap {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #installCard .bl-logo-wrap img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: none;
+  }
+</style>
 
-  <!-- Django messages stacked here -->
-  <div id="django-messages-fab" style="display:flex; flex-direction:column; gap:10px; align-items:flex-end; width:100%; max-width:400px;">
+<div id="voice-fab-wrapper">
+
+  <div id="django-messages-fab" style="display:flex; flex-direction:column; gap:10px; align-items:flex-end; width:100%;">
     {% if messages %}
       {% for message in messages %}
-        <div class="bg-white shadow-lg rounded-4 p-3 pe-5 border position-relative django-msg-card"
-             style="width:95vw; max-width:400px; animation:slideInRight 0.25s ease;">
+        <div class="bg-white rounded-4 p-3 pe-5 border position-relative django-msg-card bl-toast-card"
+             style="animation:slideInRight 0.25s ease;">
           <div class="d-flex align-items-center gap-3">
             {% if message.tags == 'success' %}
               <div style="width:36px;height:36px;border-radius:50%;background:#d4edda;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -288,78 +342,68 @@
     {% endif %}
   </div>
 
-  <!-- Install card -->
-  <div id="installCard"
-       class="d-none"
-       style="width:95vw; max-width:400px;">
-    <div class="bg-white shadow-lg rounded-4 p-4 pe-5 border position-relative">
-      <div class="d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center">
-          <div class="me-3">
-            <img src="/static/images/icon-192.png"
-                 alt="BloodLink Logo"
-                 class="rounded-4 shadow-sm"
-                 style="width:50px;height:50px;object-fit:cover;">
-          </div>
-          <div>
-            <h6 class="mb-1 fw-bold">Install BloodLink</h6>
-            <small class="text-muted">Fast, offline-ready, app-like experience.</small>
-          </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <button id="installBtn" class="btn btn-danger rounded-3 px-3 fw-semibold shadow-sm">Install</button>
-          <button id="closeInstallCard"
-                  class="btn btn-sm position-absolute top-0 end-0 mt-2 me-2 border-0 bg-transparent text-muted"
-                  style="font-size:18px;">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
+  <!-- Online/Offline toast slot -->
+  <div id="connectivity-toast-slot" style="width:100%;display:flex;flex-direction:column;align-items:flex-end;gap:10px;"></div>
+
+  <!-- PWA Install card -->
+  <div id="installCard" class="d-none" style="width:100%;max-width:400px;">
+    <div id="installCardInner">
+      <div class="bl-logo-wrap">
+        <img src="/static/images/icon-512.png" alt="BloodLink">
       </div>
+      <div style="flex:1;min-width:0;">
+        <div class="fw-bold" style="font-size:0.875rem;line-height:1.2;">Install BloodLink</div>
+        <div class="text-muted" style="font-size:0.75rem;line-height:1.3;">Fast, offline-ready, app-like experience.</div>
+      </div>
+      <button id="installBtn" class="btn btn-danger rounded-3 fw-semibold flex-shrink-0" style="font-size:0.8rem;padding:6px 14px;white-space:nowrap;">Install</button>
+      <button id="closeInstallCard" class="btn border-0 bg-transparent text-muted" style="position:absolute;top:6px;right:6px;font-size:16px;line-height:1;padding:4px 6px;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
   </div>
 
-  <!-- Mic button -->
-  <button id="global-voice-btn"
-              title="Voice Command (Filipino/English)"
-              style="width:56px; height:56px; border-radius:50%; border:none;
-                     background:#c0392b; color:#fff; font-size:1.3rem;
-                     box-shadow:0 4px 16px rgba(192,57,43,0.4);
-                     display:flex; align-items:center; justify-content:center;
-                     cursor:pointer; transition: transform 0.15s, box-shadow 0.15s;">
-        <i class="fa-solid fa-microphone" id="global-voice-icon"></i>
-      </button>
-    </div>
+  <div style="position:relative;width:56px;height:56px;display:flex;align-items:center;justify-content:center;">
+    <div id="mic-pulse-ring" style="
+      position:absolute;
+      width:56px;height:56px;
+      border-radius:50%;
+      background:rgba(192,57,43,0.45);
+      transform:scale(1);
+      transition:transform 0.05s ease-out, opacity 0.05s ease-out;
+      opacity:0;
+      pointer-events:none;
+    "></div>
+    <button id="global-voice-btn"
+            title="Voice Command (Filipino/English)"
+            style="position:relative;width:56px;height:56px;border-radius:50%;border:none;
+                   background:#c0392b;color:#fff;font-size:1.3rem;
+                   box-shadow:0 4px 16px rgba(192,57,43,0.4);
+                   display:flex;align-items:center;justify-content:center;
+                   cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;z-index:1;">
+      <i class="fa-solid fa-microphone" id="global-voice-icon"></i>
+    </button>
+  </div>
+</div>
 
-    <!-- PWA Install Script -->
     <script>
     let deferredPrompt;
-
     const installCard = document.getElementById('installCard');
     const installBtn = document.getElementById('installBtn');
     const closeInstallCard = document.getElementById('closeInstallCard');
-
-    // Use a session-specific key tied to the Django user
     const dismissKey = 'pwa_dismissed_{{ request.user.pk }}_{{ request.session.session_key }}';
-
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-
-        if (!sessionStorage.getItem(dismissKey)) {
-            installCard.classList.remove('d-none');
-        }
+        if (!sessionStorage.getItem(dismissKey)) { installCard.classList.remove('d-none'); }
     });
-
     installBtn.addEventListener('click', async () => {
         if (!deferredPrompt) return;
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        console.log('Install result:', outcome);
         deferredPrompt = null;
         installCard.classList.add('d-none');
         sessionStorage.setItem(dismissKey, 'true');
     });
-
     closeInstallCard.addEventListener('click', () => {
         installCard.classList.add('d-none');
         sessionStorage.setItem(dismissKey, 'true');
@@ -373,9 +417,7 @@
         const icon      = document.getElementById('global-voice-icon');
         const bubble    = document.getElementById('voice-transcript-bubble');
         const bubbleTxt = document.getElementById('voice-transcript-text');
-
         if (!btn) return;
-
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
             btn.disabled = true;
@@ -383,38 +425,46 @@
             btn.style.opacity = '0.4';
             return;
         }
-
         const recognition = new SpeechRecognition();
         recognition.continuous     = false;
         recognition.interimResults = false;
         recognition.lang           = 'fil-PH';
-
         let isListening = false;
-
-        // ── Text-to-Speech ──────────────────────────────────────
+        let activeMicStream = null;
         function speak(text, lang='en-US') {
-            window.speechSynthesis.cancel(); // stop any ongoing speech
+            window.speechSynthesis.cancel();
+            if (activeMicStream) {
+                activeMicStream.getTracks().forEach(t => t.enabled = false);
+            }
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang  = lang;
             utterance.rate  = 1.0;
             utterance.pitch = 1.0;
+            utterance.onend = () => {
+                if (activeMicStream) {
+                    activeMicStream.getTracks().forEach(t => t.enabled = true);
+                }
+            };
             window.speechSynthesis.speak(utterance);
         }
-        // ────────────────────────────────────────────────────────
-
         function showToast(msg, type='success') {
             const existing = document.getElementById('voice-toast');
             if (existing) existing.remove();
-
             const toast = document.createElement('div');
             toast.id = 'voice-toast';
-            toast.className = `alert alert-${type} position-fixed shadow`;
-            toast.style.cssText = 'bottom:24px;right:92px;z-index:9999;min-width:200px;max-width:calc(100vw - 110px);margin-bottom:0;position:fixed;';
+            toast.className = `alert alert-${type} mb-0 bl-toast-card`;
+            toast.style.animation = 'slideInRight 0.25s ease';
             toast.innerHTML = msg;
-            document.body.appendChild(toast);
-            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 4000);
+            const fab = document.getElementById('django-messages-fab');
+            if (fab) { fab.appendChild(toast); } else { document.body.appendChild(toast); }
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.style.transition = 'opacity 0.3s ease';
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 4000);
         }
-
         function setListening(on) {
             isListening = on;
             if (on) {
@@ -431,17 +481,28 @@
                 btn.title = 'Voice Command (Filipino/English)';
             }
         }
-
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             if (isListening) {
                 window.speechSynthesis.cancel();
                 recognition.abort();
                 setListening(false);
                 showToast('🎙️ Stopped listening.', 'secondary');
+                try {
+                    const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc2 = ctx2.createOscillator();
+                    const gain2 = ctx2.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(ctx2.destination);
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(660, ctx2.currentTime);
+                    osc2.frequency.linearRampToValueAtTime(440, ctx2.currentTime + 0.2);
+                    gain2.gain.setValueAtTime(1.5, ctx2.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime + 0.25);
+                    osc2.start(ctx2.currentTime);
+                    osc2.stop(ctx2.currentTime + 0.25);
+                } catch(e) {}
                 return;
             }
-
-            // Beep sound on start
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = ctx.createOscillator();
@@ -450,49 +511,72 @@
                 gain.connect(ctx.destination);
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(880, ctx.currentTime);
-                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(1.5, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
                 osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.15);
+                osc.stop(ctx.currentTime + 0.2);
             } catch(e) {}
-
             setListening(true);
             showToast('🎙️ Listening… speak in Filipino or English', 'info');
-
+            window.speechSynthesis.cancel();
+            await new Promise(r => setTimeout(r, 100));
             try { recognition.start(); } catch(e) { setListening(false); }
+            try {
+                const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                activeMicStream = micStream;
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioCtx.createMediaStreamSource(micStream);
+                const analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.75;
+                source.connect(analyser);
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                const ring = document.getElementById('mic-pulse-ring');
+                let animFrame;
+                function drawPulse() {
+                    if (!isListening) {
+                        if (ring) { ring.style.opacity = '0'; ring.style.transform = 'scale(1)'; }
+                        micStream.getTracks().forEach(t => t.stop());
+                        activeMicStream = null;
+                        audioCtx.close();
+                        return;
+                    }
+                    animFrame = requestAnimationFrame(drawPulse);
+                    analyser.getByteFrequencyData(dataArray);
+                    const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+                    const scale = 1 + (avg / 255) * 2.5;
+                    const opacity = 0.35 + (avg / 255) * 0.55;
+                    if (ring) {
+                        ring.style.transform = `scale(${scale})`;
+                        ring.style.opacity = opacity;
+                    }
+                }
+                ring.style.opacity = '0.35';
+                drawPulse();
+            } catch(e) {}
         });
-
         recognition.onresult = async function(event) {
             const transcript = event.results[0][0].transcript.trim();
-            console.log('Transcript:', transcript);
             if (bubble && bubbleTxt) { bubbleTxt.textContent = '🎙️ ' + transcript; }
             setListening(false);
+            window.speechSynthesis.cancel();
             showToast(`🎙️ Heard: "<strong>${transcript}</strong>"`, 'info');
-
             try {
                 const response = await fetch("{% url 'voice_intent' %}", {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}',
-                    },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
                     body: JSON.stringify({ transcript: transcript })
                 });
-
                 const intent = await response.json();
-                console.log('Intent:', intent);
-
                 if (intent.type === 'navigate' && intent.page === 'switch_role') {
                     showToast('🔄 Switching role…', 'info');
                     speak('Switching role.', 'en-US');
                     setTimeout(() => window.location.href = "{% url 'switch_role' %}", 3500);
-
                 } else if (intent.type === 'navigate' && intent.url) {
                     const pageName = intent.page.replace(/_/g, ' ');
                     showToast(`✅ Going to <strong>${pageName}</strong>…`, 'success');
                     speak(`Going to ${pageName}.`, 'en-US');
                     setTimeout(() => window.location.href = intent.url, 3500);
-
                 } else if (intent.type === 'logout') {
                     showToast('👋 Logging out…', 'info');
                     speak('Logging out. Goodbye!', 'en-US');
@@ -501,57 +585,30 @@
                         if (form) form.submit();
                         else window.location.href = '/logout/';
                     }, 3500);
-
                 } else if (intent.type === 'search') {
                     const btSelect   = document.getElementById('blood-type-select');
                     const locInput   = document.getElementById('location-input');
                     const searchForm = document.getElementById('search-form');
-
                     if (btSelect && locInput && searchForm) {
                         if (intent.blood_type) btSelect.value = intent.blood_type;
-
                         if (intent.location) {
                             if (locInput.tagName === 'SELECT') {
                                 const search = intent.location.toLowerCase().trim();
                                 const options = Array.from(locInput.options);
                                 const match = options.find(o => {
                                     if (!o.value) return false;
-                                    const val = o.value.toLowerCase()
-                                        .replace('city of ', '')
-                                        .replace('municipality of ', '')
-                                        .trim();
-
-                                        const expandedSearch = search
-                                          .replace(/\bsta\b/g, 'santa')
-                                          .replace(/\bsto\b/g, 'santo')
-                                          .replace(/\bgen\b/g, 'general')
-                                          .replace(/\bvda\b/g, 'viuda');
-
-                                    return val === search ||
-                                           val == expandedSearch ||
-                                           val.includes(search) ||
-                                           val.includes(expandedSearch) ||
-                                           search.includes(val) ||
-                                           expandedSearch.includes(val);
-
+                                    const val = o.value.toLowerCase().replace('city of ', '').replace('municipality of ', '').trim();
+                                    return val === search || val.includes(search) || search.includes(val);
                                 });
-                                if (match) {
-                                    locInput.value = match.value;
-                                    if (typeof $ !== 'undefined') $(locInput).trigger('change');
-                                }
-                            } else {
-                                locInput.value = intent.location;
-                            }
+                                if (match) { locInput.value = match.value; if (typeof $ !== 'undefined') $(locInput).trigger('change'); }
+                            } else { locInput.value = intent.location; }
                         }
-
                         const bloodTypeText = intent.blood_type || 'any blood type';
                         const locationText  = intent.location   || 'all locations';
                         showToast(`🔍 Searching for <strong>${bloodTypeText}</strong> donors in <strong>${locationText}</strong>…`, 'success');
                         speak(`Searching for ${bloodTypeText} donors in ${locationText}.`, 'en-US');
                         setTimeout(() => searchForm.submit(), 3500);
-
                     } else {
-                        // Not on browse page — navigate there with params
                         let url = "{% url 'browse_donors' %}?";
                         if (intent.blood_type) url += `blood_type=${encodeURIComponent(intent.blood_type)}&`;
                         if (intent.location)   url += `location=${encodeURIComponent(intent.location)}`;
@@ -561,77 +618,48 @@
                         speak(`Finding ${bloodTypeText} donors in ${locationText}.`, 'en-US');
                         setTimeout(() => window.location.href = url, 3500);
                     }
-                
                 } else if (intent.type === 'donor_search' && intent.url) {
                     showToast(`👤 Found <strong>${intent.donor_name}</strong> — opening profile…`, 'success');
                     speak(`Found ${intent.donor_name}. Opening profile.`, 'en-US');
                     setTimeout(() => window.location.href = intent.url, 1500);
-                
                 } else if (intent.type === 'donor_action') {
                     const action = intent.action;
-
                     if (action === 'send_request') {
-                        // Check if we have a URL (from server) or need to extract from page
                         if (intent.url) {
                             showToast('📋 Opening donation request form…', 'success');
                             speak('Opening donation request form.', 'en-US');
                             setTimeout(() => window.location.href = intent.url, 1500);
                         } else {
-                            // Try to find the send request button on the page
                             const sendBtn = document.querySelector('a[href*="request"]');
-                            if (sendBtn) {
-                                showToast('📋 Opening donation request form…', 'success');
-                                speak('Opening donation request form.', 'en-US');
-                                setTimeout(() => sendBtn.click(), 1500);
-                            } else {
-                                showToast('⚠️ Please navigate to a donor profile first.', 'warning');
-                                speak('Please navigate to a donor profile first.', 'en-US');
-                            }
+                            if (sendBtn) { showToast('📋 Opening donation request form…', 'success'); speak('Opening donation request form.', 'en-US'); setTimeout(() => sendBtn.click(), 1500); }
+                            else { showToast('⚠️ Please navigate to a donor profile first.', 'warning'); speak('Please navigate to a donor profile first.', 'en-US'); }
                         }
-
                     } else if (action === 'download_card') {
-                        // Check if downloadCard function exists on current page
-                        if (typeof downloadCard === 'function') {
-                            showToast('📄 Downloading donor card…', 'success');
-                            speak('Downloading donor card.', 'en-US');
-                            setTimeout(() => downloadCard(), 1500);
-                        } else {
-                            showToast('⚠️ Please navigate to a donor profile first.', 'warning');
-                            speak('Please navigate to a donor profile first.', 'en-US');
-                        }
+                        if (typeof downloadCard === 'function') { showToast('📄 Downloading donor card…', 'success'); speak('Downloading donor card.', 'en-US'); setTimeout(() => downloadCard(), 1500); }
+                        else { showToast('⚠️ Please navigate to a donor profile first.', 'warning'); speak('Please navigate to a donor profile first.', 'en-US'); }
                     }
-                    
                 } else if (intent.type === 'donor_not_found') {
                     showToast(`⚠️ No donor found named "<strong>${intent.searched_name}</strong>". Try browsing instead.`, 'warning');
                     speak(`No donor found named ${intent.searched_name}. Try browsing instead.`, 'en-US');
-                    
                 } else {
                     showToast('⚠️ Command not recognized. Try: <em>"Go to browse page"</em> or <em>"Find A+ in Calamba"</em>', 'warning');
                     speak('Command not recognized. Please try again.', 'en-US');
                 }
-
             } catch(err) {
                 showToast('⚠️ Could not process command. Please try again.', 'warning');
                 speak('Sorry, could not process your command. Please try again.', 'en-US');
             }
         };
-
         recognition.onerror = function(event) {
             setListening(false);
             if (event.error === 'aborted') return;
-            const msgs = {
-                'no-speech':     '🎙️ No speech detected — try again.',
-                'not-allowed':   '🎙️ Microphone permission denied.',
-                'network':       '🎙️ Network error during voice recognition.',
-                'audio-capture': '🎙️ Microphone not found.',
-            };
+            const msgs = { 'no-speech': '🎙️ No speech detected — try again.', 'not-allowed': '🎙️ Microphone permission denied.', 'network': '🎙️ Network error during voice recognition.', 'audio-capture': '🎙️ Microphone not found.' };
             showToast(msgs[event.error] || `⚠️ Error: ${event.error}`, 'warning');
         };
-
         recognition.onend = function() {
             setListening(false);
+            window.speechSynthesis.cancel();
         };
-
     })();
     </script>
 
@@ -651,5 +679,37 @@
   }, 4000);
 </script>
 
-    </body> 
+    <script>
+(function() {
+  function showConnectivityToast(msg, type, icon) {
+    const slot = document.getElementById('connectivity-toast-slot');
+    if (!slot) return;
+    const existing = document.getElementById('connectivity-toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.id = 'connectivity-toast';
+    toast.className = 'bg-white rounded-4 p-3 pe-4 border position-relative bl-toast-card';
+    toast.style.animation = 'slideInRight 0.25s ease';
+    toast.innerHTML = `
+      <div class="d-flex align-items-center gap-3">
+        <div style="width:36px;height:36px;border-radius:50%;background:${type === 'online' ? '#d4edda' : '#f8d7da'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="${icon}" style="color:${type === 'online' ? '#27ae60' : '#c0392b'};font-size:1rem;"></i>
+        </div>
+        <p class="mb-0 fw-semibold" style="font-size:0.875rem;color:#1a1a1a;">${msg}</p>
+      </div>`;
+    slot.appendChild(toast);
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.style.transition = 'opacity 0.3s ease';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, 4000);
+  }
+  window.addEventListener('online',  () => showConnectivityToast("You're back online.", 'online', 'fa-solid fa-wifi'));
+  window.addEventListener('offline', () => showConnectivityToast("You're offline. Some features may not work.", 'offline', 'fa-solid fa-wifi-slash'));
+})();
+</script>
+
+    </body>
     </html>

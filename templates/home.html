@@ -90,53 +90,64 @@
 </div>
 
 <!-- ── Info Cards Row ───────────────────────────────────────── -->
-<div class="row g-3 mb-4">
+<div class="row g-2 mb-4">
 
   {% if user.role == 'donor' and user.active_role == 'donor' %}
 
-    <!-- Blood Type -->
-    <div class="col-4">
-      <div class="card border-0 shadow-sm h-100 text-center py-3"
+    <!-- Blood Type — horizontal layout on mobile, vertical on md+ -->
+    <div class="col-12 col-md-4">
+      <div class="card border-0 shadow-sm h-100 py-3"
            style="border-left: 4px solid #c0392b !important;">
-        <div class="card-body">
-          <i class="fa-solid fa-droplet text-danger mb-2" style="font-size:1.4rem;"></i>
-          <div class="display-5 fw-bold text-danger">
-            {{ donor_profile.blood_type|default:"—" }}
+        <div class="card-body d-flex flex-row align-items-center justify-content-center gap-3 d-md-none">
+          <i class="fa-solid fa-droplet text-danger" style="font-size:2rem;"></i>
+          <div>
+            <div class="display-5 fw-bold text-danger lh-1">{{ donor_profile.blood_type|default:"—" }}</div>
+            <div class="text-muted small">Blood Type</div>
           </div>
+        </div>
+        <div class="card-body text-center d-none d-md-block">
+          <i class="fa-solid fa-droplet text-danger mb-2" style="font-size:1.4rem;"></i>
+          <div class="display-5 fw-bold text-danger">{{ donor_profile.blood_type|default:"—" }}</div>
           <div class="text-muted small mt-1">Blood Type</div>
         </div>
       </div>
     </div>
 
     <!-- Availability -->
-    <div class="col-4">
+    <div class="col-6 col-md-4">
       <div class="card border-0 shadow-sm h-100 text-center py-3"
            style="border-left: 4px solid {% if donor_profile.is_on_cooldown %}#f39c12{% elif donor_profile.is_available %}#27ae60{% else %}#95a5a6{% endif %} !important;">
-        <div class="card-body">
+        <div class="card-body d-flex flex-column align-items-center justify-content-center">
           {% if donor_profile.is_on_cooldown %}
-            <i class="fa-solid fa-hourglass-half text-warning mb-2" style="font-size:1.4rem;"></i>
-            <div class="fw-bold text-warning">On Cooldown</div>
-            <div class="text-muted small">until {{ donor_profile.cooldown_until|date:"M j" }}</div>
+            <div class="fw-semibold text-warning small mb-2">On Cooldown</div>
+            <div class="display-5 fw-bold text-warning lh-1">
+              <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+            <div class="text-muted small mt-2">until {{ donor_profile.cooldown_until|date:"M j" }}</div>
           {% elif donor_profile.is_available %}
-            <i class="fa-solid fa-circle-check text-success mb-2" style="font-size:1.4rem;"></i>
-            <div class="fw-bold text-success">Available</div>
-            <div class="text-muted small">Ready to donate</div>
+            <div class="fw-semibold text-success small mb-2">Available</div>
+            <div class="display-5 fw-bold text-success lh-1">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <div class="text-muted small mt-2">Ready to donate</div>
           {% else %}
-            <i class="fa-solid fa-circle-pause text-secondary mb-2" style="font-size:1.4rem;"></i>
-            <div class="fw-bold text-secondary">Unavailable</div>
-            <div class="text-muted small">Toggled off</div>
+            <div class="fw-semibold text-secondary small mb-2">Unavailable</div>
+            <div class="display-5 fw-bold text-secondary lh-1">
+              <i class="fa-solid fa-circle-pause"></i>
+            </div>
+            <div class="text-muted small mt-2">Toggled off</div>
           {% endif %}
         </div>
       </div>
     </div>
 
     <!-- Donations Logged -->
-    <div class="col-4">
+    <div class="col-6 col-md-4">
       <div class="card border-0 shadow-sm h-100 text-center py-3"
            style="border-left: 4px solid #185fa5 !important;">
-        <div class="card-body">
-          <i class="fa-solid fa-heart-pulse" style="font-size:1.4rem; color:#185fa5;" class="mb-2"></i>
-          <div class="display-5 fw-bold mt-1" style="color:#185fa5;">{{ donation_count }}</div>
+        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+          <i class="fa-solid fa-heart-pulse mb-2" style="font-size:1.4rem; color:#185fa5;"></i>
+          <div class="display-5 fw-bold" style="color:#185fa5;">{{ donation_count }}</div>
           <div class="text-muted small mt-1">Donations Logged</div>
         </div>
       </div>
@@ -145,21 +156,26 @@
   {% elif user.role == 'recipient' or user.active_role == 'recipient' %}
 
     <!-- Blood Type -->
-    <div class="col-4">
-      <div class="card border-0 shadow-sm h-100 text-center py-3"
+    <div class="col-12 col-md-4">
+      <div class="card border-0 shadow-sm h-100 py-3"
            style="border-left: 4px solid #c0392b !important;">
-        <div class="card-body">
-          <i class="fa-solid fa-droplet mb-2" style="font-size:1.4rem; color:#c0392b;"></i>
-          <div class="display-5 fw-bold" style="color:#c0392b;">
-            {{ donor_profile.blood_type|default:"—" }}
+        <div class="card-body d-flex flex-row align-items-center justify-content-center gap-3 d-md-none">
+          <i class="fa-solid fa-droplet" style="font-size:2rem; color:#c0392b;"></i>
+          <div>
+            <div class="display-5 fw-bold lh-1" style="color:#c0392b;">{{ donor_profile.blood_type|default:"—" }}</div>
+            <div class="text-muted small">Blood Type</div>
           </div>
+        </div>
+        <div class="card-body text-center d-none d-md-block">
+          <i class="fa-solid fa-droplet mb-2" style="font-size:1.4rem; color:#c0392b;"></i>
+          <div class="display-5 fw-bold" style="color:#c0392b;">{{ donor_profile.blood_type|default:"—" }}</div>
           <div class="text-muted small mt-1">Your Blood Type</div>
         </div>
       </div>
     </div>
 
     <!-- Requests Sent -->
-    <div class="col-4">
+    <div class="col-6 col-md-4">
       <div class="card border-0 shadow-sm h-100 text-center py-3"
            style="border-left: 4px solid #185fa5 !important;">
         <div class="card-body">
@@ -171,7 +187,7 @@
     </div>
 
     <!-- Accepted -->
-    <div class="col-4">
+    <div class="col-6 col-md-4">
       <div class="card border-0 shadow-sm h-100 text-center py-3"
            style="border-left: 4px solid #27ae60 !important;">
         <div class="card-body">
