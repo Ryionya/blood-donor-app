@@ -520,9 +520,20 @@
                                         .replace('city of ', '')
                                         .replace('municipality of ', '')
                                         .trim();
+
+                                        const expandedSearch = search
+                                          .replace(/\bsta\b/g, 'santa')
+                                          .replace(/\bsto\b/g, 'santo')
+                                          .replace(/\bgen\b/g, 'general')
+                                          .replace(/\bvda\b/g, 'viuda');
+
                                     return val === search ||
-                                          val.includes(search) ||
-                                          search.includes(val);
+                                           val == expandedSearch ||
+                                           val.includes(search) ||
+                                           val.includes(expandedSearch) ||
+                                           search.includes(val) ||
+                                           expandedSearch.includes(val);
+
                                 });
                                 if (match) {
                                     locInput.value = match.value;
