@@ -35,9 +35,41 @@
           * {
             font-family: 'Poppins', sans-serif;
           }
+
+          /* --- GLOBAL BLOODLINK RED OVERRIDE --- */
+          :root {
+            /* Changing Bootstrap's default 'danger' to your exact brand red (#c0392b) */
+            --bs-danger: #c0392b;
+            --bs-danger-rgb: 192, 57, 43;
+          }
+
+          /* Force all btn-danger buttons to use the brand red with proper hover states */
+          .btn-danger {
+            --bs-btn-bg: var(--bs-danger);
+            --bs-btn-border-color: var(--bs-danger);
+            --bs-btn-hover-bg: #a93226; /* Slightly darker for hover */
+            --bs-btn-hover-border-color: #a93226;
+            --bs-btn-active-bg: #962c22;
+            --bs-btn-active-border-color: #962c22;
+          }
+
+          /* Force outline buttons to match */
+          .btn-outline-danger {
+            --bs-btn-color: var(--bs-danger);
+            --bs-btn-border-color: var(--bs-danger);
+            --bs-btn-hover-bg: var(--bs-danger);
+            --bs-btn-hover-border-color: var(--bs-danger);
+          }
+
+          /* Force text and badges to match */
+          .text-danger { color: var(--bs-danger) !important; }
+          .bg-danger { background-color: var(--bs-danger) !important; }
+          .border-danger { border-color: var(--bs-danger) !important; }
+          /* ------------------------------------- */
+
           @keyframes mic-pulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.5); }
-            50%       { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+            0%, 100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.5); }
+            50%       { box-shadow: 0 0 0 8px rgba(192, 57, 43, 0); }
           }
           .btn-danger#voice-btn {
             animation: mic-pulse 1s infinite;

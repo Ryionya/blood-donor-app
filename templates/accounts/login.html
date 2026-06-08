@@ -634,6 +634,10 @@
     if (inp.type === 'password') { inp.type = 'text'; ico.className = 'fa-solid fa-eye-slash'; }
     else { inp.type = 'password'; ico.className = 'fa-solid fa-eye'; }
   }
+
+  {% if form.errors %}
+    document.getElementById('login-section').scrollIntoView({ behavior: 'instant' });
+  {% endif %}
 </script>
 </body>
 </html>
