@@ -49,7 +49,13 @@
               </strong>
 
               <span class="badge bg-danger fs-6 px-2">
-                {{ req.recipient.recipient_profile.blood_type|default:"?" }}
+                {% if req.recipient.recipient_profile.blood_type %}
+                  {{ req.recipient.recipient_profile.blood_type }}
+                {% elif req.recipient.donor_profile.blood_type %}
+                  {{ req.recipient.donor_profile.blood_type }}
+                {% else %}
+                  —
+                {% endif %}
               </span>
         
               {% if req.urgency == 'critical' %}
