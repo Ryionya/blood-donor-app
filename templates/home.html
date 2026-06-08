@@ -64,7 +64,7 @@
         {% else %}
           <span class="badge fs-6 px-3 py-2"
                 style="background-color:#e67e22;">
-            <i class="fa-solid fa-arrows-rotate me-1"></i>Browsing as Recipient
+            <i class="fa-solid fa-hand-holding-droplet me-1"></i>Recipient
           </span>
         {% endif %}
       {% elif user.role == 'recipient' %}
@@ -169,7 +169,7 @@
         <div class="card-body text-center d-none d-md-block">
           <i class="fa-solid fa-droplet mb-2" style="font-size:1.4rem; color:#c0392b;"></i>
           <div class="display-5 fw-bold" style="color:#c0392b;">{{ donor_profile.blood_type|default:"—" }}</div>
-          <div class="text-muted small mt-1">Your Blood Type</div>
+          <div class="text-muted small mt-1">Blood Type</div>
         </div>
       </div>
     </div>

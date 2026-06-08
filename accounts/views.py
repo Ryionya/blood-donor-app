@@ -110,8 +110,7 @@ def login_view(request):
             if user.is_staff or user.is_superuser:
                 return redirect('admin_dashboard')
             return redirect('home')
-        else:
-            messages.error(request, 'Invalid username or password.')
+        
     else:
         form = AuthenticationForm()
     return render(request, 'accounts/login.html', {'form': form})
