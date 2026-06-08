@@ -53,6 +53,11 @@
           <div class="col-md-8">
 
             <div class="d-flex align-items-center gap-2 mb-2">
+
+              <img src="{{ req.donor.profile_picture.url }}"
+                                 alt="{{ req.donor.username }}"
+                                 style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #e0e0e0;">
+                                 
               <span class="badge bg-danger fs-6 px-2">
                 {{ req.donor.donor_profile.blood_type|default:"?" }}
               </span>
@@ -76,14 +81,13 @@
 
             <p class="mb-1 small text-muted">
               <i class="fa-solid fa-hospital me-1"></i>{{ req.hospital_name }} &nbsp;·&nbsp;
-              <i class="fa-solid fa-location-dot me-1"></i>{{ req.donor.donor_profile.location|default:"—" }} &nbsp;·&nbsp;
+              <i class="fa-solid fa-location-dot me-1"></i>{{ req.donor.location|default:"—" }} &nbsp;·&nbsp;
               <i class="fa-regular fa-calendar me-1"></i>{{ req.created_at|date:"M d, Y" }}
             </p>
 
             <p class="mb-1 small">{{ req.message|truncatechars:120 }}</p>
 
             <p class="text-muted small mb-0">
-              <i class="fa-solid fa-triangle-exclamation me-1"></i>Urgency: {{ req.get_urgency_display }} &nbsp;·&nbsp;
               Sent {{ req.created_at|timesince }} ago
             </p>
 

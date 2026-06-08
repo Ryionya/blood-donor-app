@@ -48,7 +48,6 @@
             </div>
 
             <p class="mb-1 small text-muted"><i class="fa-solid fa-hospital me-1"></i>{{ req.hospital_name }}</p>
-            <p class="mb-1 small text-muted"><i class="fa-solid fa-triangle-exclamation me-1"></i>Urgency: {{ req.get_urgency_display }}</p>
             <p class="mb-1 small">{{ req.message|truncatechars:150 }}</p>
             <p class="text-muted small mb-0"><i class="fa-regular fa-calendar me-1"></i>Sent {{ req.created_at|timesince }} ago</p>
           </div>
@@ -77,6 +76,7 @@
               <div class="mt-2 p-2 bg-light rounded small text-start">
                 <p class="mb-1 fw-semibold"><i class="fa-solid fa-phone me-1"></i>Recipient Contact</p>
                 <p class="mb-0">{{ req.recipient.phone_number|default:"Not provided" }}</p>
+                <p class="mb-0 text-muted">Coordinate directly with the recipient.</p>
               </div>
               <a href="{% url 'chat' req.pk %}" class="btn btn-danger btn-sm w-100 mt-2">
                   <i class="fa-solid fa-comments me-1"></i>Open Chat

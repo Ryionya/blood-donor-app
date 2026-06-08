@@ -18,7 +18,7 @@
           Requesting from
           <strong>{{ donor.user.username }}</strong>
           — Blood Type <span class="badge bg-white text-danger">{{ donor.blood_type }}</span>
-          · <i class="fa-solid fa-location-dot me-1"></i>{{ donor.location|default:"Location not set" }}
+          · <i class="fa-solid fa-location-dot me-1"></i>{{ donor.user.location|default:"Location not set" }}
         </p>
       </div>
 
